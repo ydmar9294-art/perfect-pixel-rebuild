@@ -462,18 +462,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let userId: string | null = null;
 
       if (error) {
-        // If user already exists in auth, try to login instead
+        // If user already exists, show generic message to prevent account enumeration
         if (error.message?.includes('already registered') || error.code === 'user_already_exists') {
-          const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password: pass
-          });
-          
-          if (loginError) {
-            throw new Error('البريد مسجل مسبقاً. تحقق من كلمة المرور أو استخدم بريداً آخر.');
-          }
-          
-          userId = loginData.user?.id || null;
+          throw new Error('حدث خطأ في التسجيل. يرجى استخدام تسجيل الدخول إذا كان لديك حساب مسبق.');
         } else {
           throw error;
         }
@@ -516,18 +507,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let userId: string | null = null;
 
       if (error) {
-        // If user already exists in auth, try to login instead
+        // If user already exists, show generic message to prevent account enumeration
         if (error.message?.includes('already registered') || error.code === 'user_already_exists') {
-          const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password: pass
-          });
-          
-          if (loginError) {
-            throw new Error('البريد مسجل مسبقاً. تحقق من كلمة المرور أو استخدم بريداً آخر.');
-          }
-          
-          userId = loginData.user?.id || null;
+          throw new Error('حدث خطأ في التسجيل. يرجى استخدام تسجيل الدخول إذا كان لديك حساب مسبق.');
         } else {
           throw error;
         }
@@ -577,19 +559,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         let userId: string | null = null;
 
         if (signUpError) {
-          // If user already exists in auth, try to login instead
+          // If user already exists, show generic message to prevent account enumeration
           if (signUpError.message?.includes('already registered') || signUpError.code === 'user_already_exists') {
-            const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-              email: email.trim(),
-              password: pass
-            });
-            
-            if (loginError) {
-              addNotification('كلمة المرور غير صحيحة', 'error');
-              return false;
-            }
-            
-            userId = loginData.user?.id || null;
+            addNotification('حدث خطأ في التسجيل. يرجى استخدام تسجيل الدخول إذا كان لديك حساب مسبق.', 'error');
+            return false;
           } else {
             throw signUpError;
           }
