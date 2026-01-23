@@ -113,6 +113,66 @@ export type Database = {
           },
         ]
       }
+      deliveries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          distributor_id: string | null
+          distributor_name: string
+          id: string
+          notes: string | null
+          organization_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          distributor_id?: string | null
+          distributor_name: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          distributor_id?: string | null
+          distributor_name?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      delivery_items: {
+        Row: {
+          created_at: string
+          delivery_id: string
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          delivery_id: string
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          delivery_id?: string
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+        }
+        Relationships: []
+      }
       developer_licenses: {
         Row: {
           days_valid: number | null
@@ -199,6 +259,45 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      pending_employees: {
+        Row: {
+          activation_code: string
+          created_at: string
+          created_by: string | null
+          employee_type: Database["public"]["Enums"]["employee_type"]
+          id: string
+          is_used: boolean
+          name: string
+          organization_id: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          activation_code: string
+          created_at?: string
+          created_by?: string | null
+          employee_type: Database["public"]["Enums"]["employee_type"]
+          id?: string
+          is_used?: boolean
+          name: string
+          organization_id: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          activation_code?: string
+          created_at?: string
+          created_by?: string | null
+          employee_type?: Database["public"]["Enums"]["employee_type"]
+          id?: string
+          is_used?: boolean
+          name?: string
+          organization_id?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: []
       }
@@ -298,6 +397,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      purchases: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          supplier_name: string | null
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          supplier_name?: string | null
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          supplier_name?: string | null
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: []
       }
       sale_items: {
         Row: {
@@ -545,6 +686,10 @@ export type Database = {
       }
     }
     Functions: {
+      activate_employee: {
+        Args: { p_activation_code: string; p_user_id: string }
+        Returns: undefined
+      }
       add_collection_rpc: {
         Args: { p_amount: number; p_notes?: string; p_sale_id: string }
         Returns: string
@@ -556,6 +701,20 @@ export type Database = {
           p_role: Database["public"]["Enums"]["user_role"]
           p_type: Database["public"]["Enums"]["employee_type"]
         }
+        Returns: string
+      }
+      add_purchase_rpc: {
+        Args: {
+          p_notes?: string
+          p_product_id: string
+          p_quantity: number
+          p_supplier_name?: string
+          p_unit_price: number
+        }
+        Returns: string
+      }
+      create_delivery_rpc: {
+        Args: { p_distributor_name: string; p_items: Json; p_notes?: string }
         Returns: string
       }
       create_sale_rpc: {

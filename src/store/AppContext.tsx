@@ -9,6 +9,37 @@ import React, {
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole, User, Product, License, LicenseStatus, EmployeeType, Organization, Customer, Sale, Payment, Notification } from '@/types';
 
+interface Purchase {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  supplier_name?: string;
+  notes?: string;
+  created_at: number;
+}
+
+interface Delivery {
+  id: string;
+  distributor_name: string;
+  status: string;
+  notes?: string;
+  created_at: number;
+}
+
+interface PendingEmployee {
+  id: string;
+  name: string;
+  phone?: string;
+  role: UserRole;
+  employee_type: EmployeeType;
+  activation_code: string;
+  is_used: boolean;
+  created_at: number;
+}
+
 interface AppContextType {
   user: User | null;
   role: UserRole | null;
@@ -22,6 +53,9 @@ interface AppContextType {
   payments: Payment[];
   users: User[];
   licenses: License[];
+  purchases: Purchase[];
+  deliveries: Delivery[];
+  pendingEmployees: PendingEmployee[];
 
   login: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -39,13 +73,15 @@ interface AppContextType {
   addCollection: (saleId: string, amount: number, notes?: string) => Promise<void>;
   reversePayment: (paymentId: string, reason: string) => Promise<void>;
   addCustomer: (name: string, phone: string) => Promise<void>;
-  addDistributor: (name: string, phone: string, role: UserRole, type: EmployeeType) => Promise<string>;
+  addDistributor: (name: string, phone: string, role: UserRole, type: EmployeeType) => Promise<{ code: string; employee: PendingEmployee | null }>;
   addProduct: (product: Omit<Product, 'id' | 'organization_id'>) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   issueLicense: (orgName: string, type: 'TRIAL' | 'PERMANENT', days: number) => Promise<void>;
   updateLicenseStatus: (id: string, ownerId: string | null, status: LicenseStatus) => Promise<void>;
   makeLicensePermanent: (id: string, ownerId: string | null) => Promise<void>;
+  addPurchase: (productId: string, quantity: number, unitPrice: number, supplierName?: string, notes?: string) => Promise<void>;
+  createDelivery: (distributorName: string, items: any[], notes?: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -63,6 +99,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [payments, setPayments] = useState<Payment[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [licenses, setLicenses] = useState<License[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [pendingEmployees, setPendingEmployees] = useState<PendingEmployee[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const initializingAuth = useRef(false);
@@ -108,11 +147,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     try {
       if (role !== UserRole.DEVELOPER) {
-        const [productsRes, customersRes, salesRes, paymentsRes] = await Promise.all([
+        const [productsRes, customersRes, salesRes, paymentsRes, purchasesRes, deliveriesRes, pendingRes] = await Promise.all([
           supabase.from('products').select('*').eq('is_deleted', false),
           supabase.from('customers').select('*'),
           supabase.from('sales').select('*').order('created_at', { ascending: false }),
-          supabase.from('collections').select('*').order('created_at', { ascending: false })
+          supabase.from('collections').select('*').order('created_at', { ascending: false }),
+          supabase.from('purchases').select('*').order('created_at', { ascending: false }),
+          supabase.from('deliveries').select('*').order('created_at', { ascending: false }),
+          role === UserRole.OWNER ? supabase.from('pending_employees').select('*').eq('is_used', false).order('created_at', { ascending: false }) : Promise.resolve({ data: [] })
         ]);
         
         let usersRes: any = null;
@@ -166,6 +208,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           reverseReason: p.reverse_reason,
           timestamp: new Date(p.created_at).getTime()
         })));
+
+        setPurchases((purchasesRes?.data || []).map((p: any) => ({
+          id: p.id,
+          product_id: p.product_id,
+          product_name: p.product_name,
+          quantity: p.quantity,
+          unit_price: Number(p.unit_price),
+          total_price: Number(p.total_price),
+          supplier_name: p.supplier_name,
+          notes: p.notes,
+          created_at: new Date(p.created_at).getTime()
+        })));
+
+        setDeliveries((deliveriesRes?.data || []).map((d: any) => ({
+          id: d.id,
+          distributor_name: d.distributor_name,
+          status: d.status,
+          notes: d.notes,
+          created_at: new Date(d.created_at).getTime()
+        })));
+
+        if (role === UserRole.OWNER) {
+          setPendingEmployees((pendingRes?.data || []).map((e: any) => ({
+            id: e.id,
+            name: e.name,
+            phone: e.phone,
+            role: e.role as UserRole,
+            employee_type: e.employee_type as EmployeeType,
+            activation_code: e.activation_code,
+            is_used: e.is_used,
+            created_at: new Date(e.created_at).getTime()
+          })));
+        }
 
         if (role === UserRole.OWNER && usersRes?.data) {
           setUsers((usersRes.data || []).map((u: any) => ({
@@ -483,6 +558,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         payments,
         users,
         licenses,
+        purchases,
+        deliveries,
+        pendingEmployees,
 
         login,
         logout,
@@ -570,10 +648,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (error) throw error;
             await refreshAllData();
             addNotification('تم إنشاء كود التفعيل', 'success');
-            return data as string;
+            
+            // Get the pending employee we just created
+            const { data: pendingData } = await supabase
+              .from('pending_employees')
+              .select('*')
+              .eq('activation_code', data)
+              .single();
+            
+            const employee: PendingEmployee | null = pendingData ? {
+              id: pendingData.id,
+              name: pendingData.name,
+              phone: pendingData.phone,
+              role: pendingData.role as UserRole,
+              employee_type: pendingData.employee_type as EmployeeType,
+              activation_code: pendingData.activation_code,
+              is_used: pendingData.is_used,
+              created_at: new Date(pendingData.created_at).getTime()
+            } : null;
+            
+            return { code: data as string, employee };
           } catch (e) { 
             handleError(e); 
-            return '';
+            return { code: '', employee: null };
           }
         },
 
@@ -643,6 +740,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             await supabase.from('developer_licenses').update({ type: 'PERMANENT' }).eq('id', id);
             await refreshAllData();
             addNotification('تم تحويل الترخيص إلى دائم', 'success');
+          } catch (e) { handleError(e); }
+        },
+
+        addPurchase: async (productId, quantity, unitPrice, supplierName, notes) => {
+          try {
+            await supabase.rpc('add_purchase_rpc', {
+              p_product_id: productId,
+              p_quantity: quantity,
+              p_unit_price: unitPrice,
+              p_supplier_name: supplierName,
+              p_notes: notes
+            });
+            await refreshAllData();
+            addNotification('تم تسجيل عملية الشراء وزيادة المخزون', 'success');
+          } catch (e) { handleError(e); }
+        },
+
+        createDelivery: async (distributorName, items, notes) => {
+          try {
+            await supabase.rpc('create_delivery_rpc', {
+              p_distributor_name: distributorName,
+              p_items: items,
+              p_notes: notes
+            });
+            await refreshAllData();
+            addNotification('تم تسليم البضاعة وخصمها من المخزون', 'success');
           } catch (e) { handleError(e); }
         }
       }}

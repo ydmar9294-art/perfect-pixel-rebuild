@@ -18,6 +18,10 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { LicenseStatus, Product } from '@/types';
+import { PurchasesTab } from '@/components/owner/PurchasesTab';
+import { DeliveriesTab } from '@/components/owner/DeliveriesTab';
+import { FinanceTab } from '@/components/owner/FinanceTab';
+import { EmployeeKPIs } from '@/components/owner/EmployeeKPIs';
 
 // ==========================================
 // LOGIN VIEW
@@ -291,11 +295,13 @@ const DeveloperHub: React.FC = () => {
 // OWNER DASHBOARD
 // ==========================================
 const OwnerDashboard: React.FC = () => {
-  const { sales = [], payments = [], products = [], users = [], customers = [], logout, addDistributor } = useApp();
-  const [activeTab, setActiveTab] = useState<'daily' | 'team' | 'inventory' | 'customers'>('daily');
+  const { sales = [], payments = [], products = [], users = [], customers = [], logout, addDistributor, pendingEmployees = [] } = useApp();
+  const [activeTab, setActiveTab] = useState<'daily' | 'team' | 'inventory' | 'customers' | 'purchases' | 'deliveries' | 'finance'>('daily');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [newEmployeeCode, setNewEmployeeCode] = useState<string | null>(null);
+  const [newEmployeeData, setNewEmployeeData] = useState<any | null>(null);
 
   React.useEffect(() => { setIsMounted(true); }, []);
 
@@ -319,6 +325,28 @@ const OwnerDashboard: React.FC = () => {
 
   const teamMembers = users.filter(u => u.role === UserRole.EMPLOYEE);
 
+  const handleAddEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    const result = await addDistributor(
+      fd.get('name') as string, 
+      fd.get('phone') as string, 
+      UserRole.EMPLOYEE, 
+      fd.get('type') as EmployeeType
+    );
+    
+    if (result.code) {
+      setNewEmployeeCode(result.code);
+      setNewEmployeeData(result.employee);
+    }
+  };
+
+  const closeEmployeeModal = () => {
+    setShowAddUserModal(false);
+    setNewEmployeeCode(null);
+    setNewEmployeeData(null);
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-4 pb-24 text-end animate-fade-in" dir="rtl">
       <div className="flex items-center justify-between bg-card px-5 py-4 rounded-[1.8rem] shadow-sm border mx-2">
@@ -332,11 +360,14 @@ const OwnerDashboard: React.FC = () => {
         <button onClick={logout} className="w-10 h-10 flex items-center justify-center bg-destructive/10 text-destructive rounded-xl active:scale-90"><LogOut size={20} /></button>
       </div>
 
-      <div className="sticky top-2 z-[100] mx-2 flex bg-card/80 backdrop-blur-lg p-1 rounded-2xl border shadow-xl overflow-x-auto gap-1">
-        <TabBtn active={activeTab === 'daily'} onClick={() => setActiveTab('daily')} icon={<LayoutDashboard size={18}/>} label="الرئيسية" />
-        <TabBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Box size={18}/>} label="المخزن" />
-        <TabBtn active={activeTab === 'team'} onClick={() => setActiveTab('team')} icon={<Users size={18}/>} label="الموظفين" />
-        <TabBtn active={activeTab === 'customers'} onClick={() => setActiveTab('customers')} icon={<Briefcase size={18}/>} label="الزبائن" />
+      <div className="sticky top-2 z-[100] mx-2 flex bg-card/80 backdrop-blur-lg p-1 rounded-2xl border shadow-xl overflow-x-auto gap-1 no-scrollbar">
+        <TabBtn active={activeTab === 'daily'} onClick={() => setActiveTab('daily')} icon={<LayoutDashboard size={16}/>} label="الرئيسية" />
+        <TabBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Box size={16}/>} label="المخزن" />
+        <TabBtn active={activeTab === 'purchases'} onClick={() => setActiveTab('purchases')} icon={<Factory size={16}/>} label="مشتريات" />
+        <TabBtn active={activeTab === 'deliveries'} onClick={() => setActiveTab('deliveries')} icon={<Briefcase size={16}/>} label="تسليمات" />
+        <TabBtn active={activeTab === 'team'} onClick={() => setActiveTab('team')} icon={<Users size={16}/>} label="الفريق" />
+        <TabBtn active={activeTab === 'customers'} onClick={() => setActiveTab('customers')} icon={<DollarSign size={16}/>} label="الزبائن" />
+        <TabBtn active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} icon={<TrendingUp size={16}/>} label="المالية" />
       </div>
 
       <div className="px-2 space-y-4">
@@ -352,18 +383,21 @@ const OwnerDashboard: React.FC = () => {
                   <AreaChart data={stats.chartData}>
                     <defs>
                       <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                     <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
                     <Tooltip contentStyle={{ borderRadius: '16px', border: 'none' }} />
-                    <Area type="monotone" dataKey="revenue" stroke="hsl(221, 83%, 53%)" fillOpacity={1} fill="url(#colorRev)" strokeWidth={3} />
+                    <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorRev)" strokeWidth={3} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
             </div>
+            
+            {/* Employee KPIs */}
+            <EmployeeKPIsSection />
           </div>
         )}
 
@@ -372,28 +406,71 @@ const OwnerDashboard: React.FC = () => {
             <button onClick={() => setShowAddUserModal(true)} className="w-full py-5 bg-primary text-primary-foreground rounded-[1.8rem] font-black text-sm flex items-center justify-center gap-2 shadow-xl">
               <UserPlus size={18}/> إضافة موظف
             </button>
-            <div className="grid grid-cols-1 gap-3">
-              {teamMembers.map(u => (
-                <div key={u.id} className="bg-card p-5 rounded-[2.2rem] border shadow-sm flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center text-primary"><Users size={24}/></div>
-                    <div>
-                      <p className="font-black text-foreground text-sm">{u.name}</p>
-                      <p className="text-[9px] font-black text-muted-foreground uppercase">
-                        {u.employeeType === EmployeeType.FIELD_AGENT ? 'موزع ميداني' : 'محاسب مالي'}
-                      </p>
+            
+            {/* Pending Employees with codes */}
+            {pendingEmployees.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-black text-foreground text-sm flex items-center gap-2 px-2">
+                  <Clock size={16} className="text-warning" />
+                  أكواد تفعيل معلقة
+                </h3>
+                {pendingEmployees.map(pe => (
+                  <div key={pe.id} className="bg-warning/10 p-4 rounded-[2rem] border border-warning/20">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-black text-foreground">{pe.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{pe.phone}</p>
+                      </div>
+                      <span className="badge badge-warning text-[9px]">
+                        {pe.employee_type === EmployeeType.FIELD_AGENT ? 'موزع' : 'محاسب'}
+                      </span>
+                    </div>
+                    <div 
+                      onClick={() => { navigator.clipboard.writeText(pe.activation_code); setCopiedId(pe.id); setTimeout(() => setCopiedId(null), 2000); }}
+                      className="bg-card p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-muted transition-colors"
+                    >
+                      <span className="font-mono font-black text-primary tracking-wider text-sm">{pe.activation_code}</span>
+                      {copiedId === pe.id ? <CheckCircle2 size={18} className="text-success" /> : <Copy size={18} className="text-muted-foreground" />}
                     </div>
                   </div>
-                  <button onClick={() => { navigator.clipboard.writeText(u.licenseKey || ''); setCopiedId(u.id); setTimeout(() => setCopiedId(null), 2000); }} className={`p-3 rounded-xl ${copiedId === u.id ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
-                    {copiedId === u.id ? <CheckCircle2 size={18}/> : <Copy size={18}/>}
-                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Active Team Members */}
+            <div className="grid grid-cols-1 gap-3">
+              {teamMembers.length === 0 && pendingEmployees.length === 0 ? (
+                <div className="bg-card p-8 rounded-[2.5rem] border text-center">
+                  <Users size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground font-bold">لا يوجد موظفين</p>
                 </div>
-              ))}
+              ) : (
+                teamMembers.map(u => (
+                  <div key={u.id} className="bg-card p-5 rounded-[2.2rem] border shadow-sm flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-success/10 rounded-2xl flex items-center justify-center text-success"><CheckCircle2 size={24}/></div>
+                      <div>
+                        <p className="font-black text-foreground text-sm">{u.name}</p>
+                        <p className="text-[9px] font-black text-muted-foreground uppercase">
+                          {u.employeeType === EmployeeType.FIELD_AGENT ? 'موزع ميداني' : 'محاسب مالي'}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="badge badge-success">نشط</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
         
         {activeTab === 'inventory' && <AdminPanel />}
+        
+        {activeTab === 'purchases' && <PurchasesTabSection />}
+        
+        {activeTab === 'deliveries' && <DeliveriesTabSection />}
+        
+        {activeTab === 'finance' && <FinanceTabSection />}
         
         {activeTab === 'customers' && (
           <div className="space-y-3 animate-fade-in">
@@ -412,32 +489,60 @@ const OwnerDashboard: React.FC = () => {
       </div>
 
       {showAddUserModal && (
-        <div className="modal-overlay">
-          <div className="bg-card rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-md p-8 space-y-6 animate-slide-in-from-bottom">
+        <div className="modal-overlay p-4">
+          <div className="bg-card rounded-[2.5rem] w-full max-w-md p-8 space-y-6 animate-zoom-in">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-black">إضافة موظف جديد</h2>
-              <button onClick={() => setShowAddUserModal(false)} className="p-2 bg-muted rounded-full"><X size={20}/></button>
+              <h2 className="text-xl font-black">{newEmployeeCode ? 'تم إنشاء كود التفعيل' : 'إضافة موظف جديد'}</h2>
+              <button onClick={closeEmployeeModal} className="p-2 bg-muted rounded-full"><X size={20}/></button>
             </div>
-            <form onSubmit={async (e) => { 
-              e.preventDefault(); 
-              const fd = new FormData(e.currentTarget); 
-              await addDistributor(fd.get('name') as string, fd.get('phone') as string, UserRole.EMPLOYEE, fd.get('type') as EmployeeType); 
-              setShowAddUserModal(false); 
-            }} className="space-y-4">
-              <input name="name" required placeholder="اسم الموظف" className="input-field" />
-              <input name="phone" required placeholder="رقم الهاتف" className="input-field" />
-              <select name="type" className="input-field">
-                <option value={EmployeeType.FIELD_AGENT}>موزع ميداني</option>
-                <option value={EmployeeType.ACCOUNTANT}>محاسب مالي</option>
-              </select>
-              <button type="submit" className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black">توليد كود التفعيل</button>
-            </form>
+            
+            {newEmployeeCode ? (
+              <div className="space-y-4">
+                <div className="bg-success/10 p-6 rounded-2xl border border-success/20 text-center">
+                  <CheckCircle2 size={48} className="mx-auto text-success mb-3" />
+                  <p className="text-sm text-muted-foreground mb-2">كود تفعيل الموظف:</p>
+                  <p className="text-2xl font-mono font-black text-primary tracking-widest">{newEmployeeCode}</p>
+                </div>
+                
+                {newEmployeeData && (
+                  <div className="bg-muted p-4 rounded-xl space-y-2 text-sm">
+                    <p><span className="text-muted-foreground">الاسم:</span> <span className="font-black">{newEmployeeData.name}</span></p>
+                    <p><span className="text-muted-foreground">الهاتف:</span> <span className="font-black">{newEmployeeData.phone}</span></p>
+                    <p><span className="text-muted-foreground">النوع:</span> <span className="font-black">{newEmployeeData.employee_type === EmployeeType.FIELD_AGENT ? 'موزع ميداني' : 'محاسب'}</span></p>
+                  </div>
+                )}
+                
+                <button 
+                  onClick={() => { navigator.clipboard.writeText(newEmployeeCode); }}
+                  className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black flex items-center justify-center gap-2"
+                >
+                  <Copy size={18} /> نسخ الكود
+                </button>
+                <button onClick={closeEmployeeModal} className="w-full py-4 bg-muted text-muted-foreground rounded-2xl font-black">إغلاق</button>
+              </div>
+            ) : (
+              <form onSubmit={handleAddEmployee} className="space-y-4">
+                <input name="name" required placeholder="اسم الموظف" className="input-field" />
+                <input name="phone" required placeholder="رقم الهاتف" className="input-field" />
+                <select name="type" className="input-field">
+                  <option value={EmployeeType.FIELD_AGENT}>موزع ميداني</option>
+                  <option value={EmployeeType.ACCOUNTANT}>محاسب مالي</option>
+                </select>
+                <button type="submit" className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black">توليد كود التفعيل</button>
+              </form>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 };
+
+// Simple wrapper components
+const PurchasesTabSection: React.FC = () => <PurchasesTab />;
+const DeliveriesTabSection: React.FC = () => <DeliveriesTab />;
+const FinanceTabSection: React.FC = () => <FinanceTab />;
+const EmployeeKPIsSection: React.FC = () => <EmployeeKPIs />;
 
 const TabBtn: React.FC<any> = ({ active, onClick, icon, label }) => (
   <button onClick={onClick} className={`tab-btn ${active ? 'tab-btn-active' : 'tab-btn-inactive'}`}>
