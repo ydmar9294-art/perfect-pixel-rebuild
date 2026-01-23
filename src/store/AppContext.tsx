@@ -159,8 +159,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ]);
         
         let usersRes: any = null;
-        if (role === UserRole.OWNER) {
-          usersRes = await supabase.from('profiles').select('*');
+        if (role === UserRole.OWNER && organization?.id) {
+          usersRes = await supabase.from('profiles').select('*').eq('organization_id', organization.id);
         }
 
         setProducts((productsRes?.data || []).map((p: any) => ({
