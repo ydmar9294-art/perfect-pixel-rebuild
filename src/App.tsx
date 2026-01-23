@@ -3,6 +3,7 @@ import { AppProvider, useApp } from '@/store/AppContext';
 import { UserRole, EmployeeType } from '@/types';
 import { Layout } from '@/components/Layout';
 import { ToastManager } from '@/components/ToastManager';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   ShieldCheck, Eye, EyeOff, Loader2, Terminal, Store,
   ShieldAlert, Key, UserPlus, LogOut, Receipt, Wallet,
@@ -65,6 +66,25 @@ const LoginView: React.FC = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      addNotification("أدخل البريد الإلكتروني أولاً", "warning");
+      return;
+    }
+    setLocalLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: window.location.origin
+      });
+      if (error) throw error;
+      addNotification("تم إرسال رابط إعادة تعيين كلمة المرور", "success");
+    } catch (err: any) {
+      addNotification(err.message || "فشل إرسال الرابط", "error");
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
   return (
     <div className={`min-h-screen flex flex-col font-tajawal relative ${isDeveloperMode ? 'bg-slate-900' : 'bg-background'}`} dir="rtl">
       <div className={`${isDeveloperMode ? 'bg-slate-800 border-b border-white/5' : 'bg-slate-900'} pt-14 pb-12 px-6 relative overflow-hidden flex flex-col items-center shrink-0`}>
@@ -75,7 +95,9 @@ const LoginView: React.FC = () => {
         <h1 className="text-3xl font-black text-white mb-1 tracking-tight z-10">
           {isDeveloperMode ? 'بوابة المطورين' : 'النظام الذكي'}
         </h1>
-        <p className="text-white/60 text-[11px] font-medium z-10 mb-8 uppercase tracking-widest">Smart Sales Pro v2</p>
+        <p className="text-white/60 text-[10px] font-medium z-10 mb-8 text-center leading-relaxed">
+          الخاص بإدارة البيع والتوزيع للمنشآت الصغيرة
+        </p>
       </div>
 
       <div className="max-w-md w-full mx-auto px-6 -mt-6 z-20 flex-1 flex flex-col pb-24">
@@ -91,7 +113,7 @@ const LoginView: React.FC = () => {
             )}
           </div>
           
-          <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-4">
+          <form onSubmit={handleSubmit} className="px-8 pb-6 space-y-4">
             <input 
               type="email" 
               placeholder="البريد الإلكتروني" 
@@ -132,9 +154,28 @@ const LoginView: React.FC = () => {
             </button>
           </form>
           
-          <div className="px-8 pb-6 border-t border-border pt-4">
-            <button onClick={() => setIsDeveloperMode(!isDeveloperMode)} className="w-full text-xs font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest">
-              {isDeveloperMode ? 'العودة لواجهة المستخدم' : 'الدخول كـ مطور نظام'}
+          {/* Forgot Password Link */}
+          {mode === 'login' && !isDeveloperMode && (
+            <div className="px-8 pb-4">
+              <button 
+                type="button" 
+                onClick={handleForgotPassword}
+                disabled={localLoading}
+                className="w-full text-xs font-bold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-2"
+              >
+                <Key size={14} />
+                نسيت كلمة المرور؟
+              </button>
+            </div>
+          )}
+          
+          <div className="px-8 pb-6 border-t border-border pt-4 flex justify-center">
+            <button 
+              onClick={() => setIsDeveloperMode(!isDeveloperMode)} 
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all"
+              title={isDeveloperMode ? 'العودة لواجهة المستخدم' : 'بوابة المطورين'}
+            >
+              {isDeveloperMode ? <Store size={18} /> : <Terminal size={18} />}
             </button>
           </div>
         </div>
