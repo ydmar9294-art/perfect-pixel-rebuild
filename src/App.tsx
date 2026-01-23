@@ -26,8 +26,8 @@ import { InventoryTab } from '@/components/owner/InventoryTab';
 // LOGIN VIEW
 // ==========================================
 const LoginView: React.FC = () => {
-  const { login, signUp, loginDeveloper, isLoading, addNotification, developerExists } = useApp();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const { login, signUp, signUpEmployee, loginDeveloper, isLoading, addNotification, developerExists } = useApp();
+  const [mode, setMode] = useState<'login' | 'signup' | 'employee'>('login');
   const [isDeveloperMode, setIsDeveloperMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -54,10 +54,16 @@ const LoginView: React.FC = () => {
         }
         if (mode === 'signup') {
           if (!activationCode.trim()) {
-            addNotification("كود التفعيل مطلوب", "error");
+            addNotification("كود تفعيل المنشأة مطلوب", "error");
             return;
           }
           await signUp(email.trim(), password.trim(), activationCode.trim().toUpperCase());
+        } else if (mode === 'employee') {
+          if (!activationCode.trim()) {
+            addNotification("كود تفعيل الموظف مطلوب", "error");
+            return;
+          }
+          await signUpEmployee(email.trim(), password.trim(), activationCode.trim().toUpperCase());
         } else {
           await login(email.trim(), password.trim());
         }
@@ -105,18 +111,19 @@ const LoginView: React.FC = () => {
 
       <div className="max-w-md w-full mx-auto px-6 -mt-6 z-20 flex-1 flex flex-col pb-24">
         <div className="bg-card rounded-[2.5rem] shadow-xl border overflow-hidden">
-          <div className="flex bg-muted p-1.5 m-6 rounded-2xl border">
+          <div className="flex bg-muted p-1 m-4 rounded-2xl border">
             {!isDeveloperMode ? (
               <>
-                <button onClick={() => setMode('login')} className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${mode === 'login' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>تسجيل الدخول</button>
-                <button onClick={() => setMode('signup')} className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${mode === 'signup' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>تفعيل نظام</button>
+                <button onClick={() => { setMode('login'); setActivationCode(''); }} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mode === 'login' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>دخول</button>
+                <button onClick={() => { setMode('signup'); setActivationCode(''); }} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mode === 'signup' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>تفعيل منشأة</button>
+                <button onClick={() => { setMode('employee'); setActivationCode(''); }} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mode === 'employee' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>تفعيل موظف</button>
               </>
             ) : (
               <div className="w-full text-center py-3.5 font-black text-foreground text-sm">واجهة التطوير التقني</div>
             )}
           </div>
           
-          <form onSubmit={handleSubmit} className="px-8 pb-6 space-y-4">
+          <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
             <input 
               type="email" 
               placeholder="البريد الإلكتروني" 
@@ -145,6 +152,16 @@ const LoginView: React.FC = () => {
                 value={activationCode} 
                 disabled={localLoading}
                 className="w-full bg-primary/10 border-2 border-primary/20 rounded-2xl px-6 py-4 font-black text-primary outline-none uppercase" 
+                onChange={e => setActivationCode(e.target.value)} 
+              />
+            )}
+            {mode === 'employee' && !isDeveloperMode && (
+              <input 
+                type="text" 
+                placeholder="كود تفعيل الموظف (EMP-XXXX-XXXX)" 
+                value={activationCode} 
+                disabled={localLoading}
+                className="w-full bg-success/10 border-2 border-success/20 rounded-2xl px-6 py-4 font-black text-success outline-none uppercase" 
                 onChange={e => setActivationCode(e.target.value)} 
               />
             )}
