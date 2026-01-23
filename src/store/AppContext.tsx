@@ -381,9 +381,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return true;
         }
       } else {
-        // Developer exists - just login
-        await login(email, pass);
-        return true;
+        // Developer already exists - try to login (only one developer allowed)
+        try {
+          await login(email, pass);
+          
+          // Check if the logged-in user has developer role
+          const { data: session } = await supabase.auth.getSession();
+          if (session?.session?.user) {
+            const { data: roles } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.session.user.id)
+              .eq('role', 'DEVELOPER')
+              .limit(1);
+            
+            if (!roles || roles.length === 0) {
+              // User is not a developer - logout and show error
+              await supabase.auth.signOut();
+              addNotification('يوجد مطور مسجل بالفعل. لا يمكن إضافة مطور آخر.', 'error');
+              return false;
+            }
+          }
+          return true;
+        } catch (loginErr) {
+          // If login fails, it's not the developer account
+          addNotification('بيانات المطور غير صحيحة أو يوجد مطور آخر بالفعل', 'error');
+          return false;
+        }
       }
       return false;
     } catch (err) {
