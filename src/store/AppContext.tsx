@@ -60,6 +60,7 @@ interface AppContextType {
   login: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
   signUp: (email: string, pass: string, code: string) => Promise<void>;
+  signUpEmployee: (email: string, pass: string, code: string) => Promise<void>;
   loginDeveloper: (email: string, pass: string) => Promise<boolean>;
   refreshAllData: () => Promise<void>;
 
@@ -298,6 +299,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         .eq('user_id', uid)
         .maybeSingle();
 
+      // Fetch license status for owner/employee
+      let licenseStatus: LicenseStatus | null = null;
+      let expiryDate: number | null = null;
+      
+      if (profile.license_key) {
+        const { data: license } = await supabase
+          .from('developer_licenses')
+          .select('status, expiryDate')
+          .eq('licenseKey', profile.license_key)
+          .maybeSingle();
+        
+        if (license) {
+          licenseStatus = license.status as LicenseStatus;
+          expiryDate = license.expiryDate ? new Date(license.expiryDate).getTime() : null;
+        }
+      } else if ((orgUser as any)?.organizations?.id) {
+        // For employees without license_key, find license by organization
+        const { data: license } = await supabase
+          .from('developer_licenses')
+          .select('status, expiryDate')
+          .eq('status', 'ACTIVE')
+          .limit(1)
+          .maybeSingle();
+        
+        // Try to find license by owner
+        const { data: ownerLicense } = await supabase
+          .from('profiles')
+          .select('license_key')
+          .eq('organization_id', (orgUser as any).organizations.id)
+          .eq('role', 'OWNER')
+          .maybeSingle();
+        
+        if (ownerLicense?.license_key) {
+          const { data: lic } = await supabase
+            .from('developer_licenses')
+            .select('status, expiryDate')
+            .eq('licenseKey', ownerLicense.license_key)
+            .maybeSingle();
+          
+          if (lic) {
+            licenseStatus = lic.status as LicenseStatus;
+            expiryDate = lic.expiryDate ? new Date(lic.expiryDate).getTime() : null;
+          }
+        }
+      }
+
       setUser({
         id: profile.id,
         name: profile.full_name,
@@ -308,7 +355,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
 
       setRole(profile.role as UserRole);
-      setOrganization((orgUser as any)?.organizations || null);
+      
+      // Set organization with license status
+      const org = (orgUser as any)?.organizations || null;
+      if (org) {
+        setOrganization({
+          ...org,
+          licenseStatus,
+          expiryDate
+        });
+      } else {
+        setOrganization(null);
+      }
     } catch (err) {
       handleError(err);
       await supabase.auth.signOut();
@@ -431,6 +489,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (rpcError) throw rpcError;
 
         addNotification('تم تفعيل الحساب بنجاح', 'success');
+        
+        // Auto login after signup (if not already logged in)
+        const { data: session } = await supabase.auth.getSession();
+        if (session.session?.user) {
+          await resolveProfile(session.session.user.id);
+        } else {
+          await login(email, pass);
+        }
+      }
+    } finally {
+      isInternalAuthOp.current = false;
+    }
+  };
+
+  // Employee Sign Up (using employee activation code)
+  const signUpEmployee = async (email: string, pass: string, code: string) => {
+    isInternalAuthOp.current = true;
+    try {
+      // First try to sign up
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: pass
+      });
+
+      let userId: string | null = null;
+
+      if (error) {
+        // If user already exists in auth, try to login instead
+        if (error.message?.includes('already registered') || error.code === 'user_already_exists') {
+          const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password: pass
+          });
+          
+          if (loginError) {
+            throw new Error('البريد مسجل مسبقاً. تحقق من كلمة المرور أو استخدم بريداً آخر.');
+          }
+          
+          userId = loginData.user?.id || null;
+        } else {
+          throw error;
+        }
+      } else {
+        userId = data.user?.id || null;
+      }
+
+      if (userId) {
+        // Use employee activation code
+        const { error: rpcError } = await supabase.rpc('activate_employee', {
+          p_user_id: userId,
+          p_activation_code: code
+        });
+        if (rpcError) throw rpcError;
+
+        addNotification('تم تفعيل حساب الموظف بنجاح', 'success');
         
         // Auto login after signup (if not already logged in)
         const { data: session } = await supabase.auth.getSession();
@@ -591,6 +704,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         login,
         logout,
         signUp,
+        signUpEmployee,
         loginDeveloper,
         refreshAllData,
         notifications,
