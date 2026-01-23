@@ -395,24 +395,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const signUp = async (email: string, pass: string, code: string) => {
     isInternalAuthOp.current = true;
     try {
+      // First try to sign up
       const { data, error } = await supabase.auth.signUp({
         email,
         password: pass
       });
 
-      if (error) throw error;
+      let userId: string | null = null;
 
-      if (data.user) {
+      if (error) {
+        // If user already exists in auth, try to login instead
+        if (error.message?.includes('already registered') || error.code === 'user_already_exists') {
+          const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password: pass
+          });
+          
+          if (loginError) {
+            throw new Error('البريد مسجل مسبقاً. تحقق من كلمة المرور أو استخدم بريداً آخر.');
+          }
+          
+          userId = loginData.user?.id || null;
+        } else {
+          throw error;
+        }
+      } else {
+        userId = data.user?.id || null;
+      }
+
+      if (userId) {
         const { error: rpcError } = await supabase.rpc('use_license', {
-          p_user_id: data.user.id,
+          p_user_id: userId,
           p_license_key: code
         });
         if (rpcError) throw rpcError;
 
         addNotification('تم تفعيل الحساب بنجاح', 'success');
         
-        // Auto login after signup
-        await login(email, pass);
+        // Auto login after signup (if not already logged in)
+        const { data: session } = await supabase.auth.getSession();
+        if (session.session?.user) {
+          await resolveProfile(session.session.user.id);
+        } else {
+          await login(email, pass);
+        }
       }
     } finally {
       isInternalAuthOp.current = false;

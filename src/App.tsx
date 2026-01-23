@@ -6,11 +6,11 @@ import { ToastManager } from '@/components/ToastManager';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ShieldCheck, Eye, EyeOff, Loader2, Terminal, Store,
-  ShieldAlert, Key, UserPlus, LogOut, Receipt, Wallet,
-  LayoutDashboard, TrendingUp, Box, Users, Briefcase,
-  Copy, CheckCircle2, X, Plus, Search, Settings2, Trash2,
-  Factory, AlertTriangle, Clock, Lock, Unlock, Activity,
-  Calculator, AlertCircle, DollarSign
+  Key, UserPlus, LogOut, Receipt, Wallet,
+  LayoutDashboard, TrendingUp, Box, Users,
+  Copy, CheckCircle2, X, Plus,
+  Clock, Lock, Unlock, Activity,
+  Calculator, DollarSign, AlertCircle
 } from 'lucide-react';
 import { CURRENCY } from '@/constants';
 import { 
@@ -18,10 +18,9 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { LicenseStatus, Product } from '@/types';
-import { PurchasesTab } from '@/components/owner/PurchasesTab';
-import { DeliveriesTab } from '@/components/owner/DeliveriesTab';
 import { FinanceTab } from '@/components/owner/FinanceTab';
 import { EmployeeKPIs } from '@/components/owner/EmployeeKPIs';
+import { InventoryTab } from '@/components/owner/InventoryTab';
 
 // ==========================================
 // LOGIN VIEW
@@ -296,7 +295,7 @@ const DeveloperHub: React.FC = () => {
 // ==========================================
 const OwnerDashboard: React.FC = () => {
   const { sales = [], payments = [], products = [], users = [], customers = [], logout, addDistributor, pendingEmployees = [] } = useApp();
-  const [activeTab, setActiveTab] = useState<'daily' | 'team' | 'inventory' | 'customers' | 'purchases' | 'deliveries' | 'finance'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'team' | 'inventory' | 'customers' | 'finance'>('daily');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -360,11 +359,9 @@ const OwnerDashboard: React.FC = () => {
         <button onClick={logout} className="w-10 h-10 flex items-center justify-center bg-destructive/10 text-destructive rounded-xl active:scale-90"><LogOut size={20} /></button>
       </div>
 
-      <div className="sticky top-2 z-[100] mx-2 flex bg-card/80 backdrop-blur-lg p-1 rounded-2xl border shadow-xl overflow-x-auto gap-1 no-scrollbar">
+      <div className="sticky top-2 z-[100] mx-2 grid grid-cols-5 gap-1 bg-card/80 backdrop-blur-lg p-1.5 rounded-2xl border shadow-xl">
         <TabBtn active={activeTab === 'daily'} onClick={() => setActiveTab('daily')} icon={<LayoutDashboard size={16}/>} label="الرئيسية" />
-        <TabBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Box size={16}/>} label="المخزن" />
-        <TabBtn active={activeTab === 'purchases'} onClick={() => setActiveTab('purchases')} icon={<Factory size={16}/>} label="مشتريات" />
-        <TabBtn active={activeTab === 'deliveries'} onClick={() => setActiveTab('deliveries')} icon={<Briefcase size={16}/>} label="تسليمات" />
+        <TabBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Box size={16}/>} label="المخزون" />
         <TabBtn active={activeTab === 'team'} onClick={() => setActiveTab('team')} icon={<Users size={16}/>} label="الفريق" />
         <TabBtn active={activeTab === 'customers'} onClick={() => setActiveTab('customers')} icon={<DollarSign size={16}/>} label="الزبائن" />
         <TabBtn active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} icon={<TrendingUp size={16}/>} label="المالية" />
@@ -464,11 +461,7 @@ const OwnerDashboard: React.FC = () => {
           </div>
         )}
         
-        {activeTab === 'inventory' && <AdminPanel />}
-        
-        {activeTab === 'purchases' && <PurchasesTabSection />}
-        
-        {activeTab === 'deliveries' && <DeliveriesTabSection />}
+        {activeTab === 'inventory' && <InventoryTabSection />}
         
         {activeTab === 'finance' && <FinanceTabSection />}
         
@@ -539,14 +532,21 @@ const OwnerDashboard: React.FC = () => {
 };
 
 // Simple wrapper components
-const PurchasesTabSection: React.FC = () => <PurchasesTab />;
-const DeliveriesTabSection: React.FC = () => <DeliveriesTab />;
+const InventoryTabSection: React.FC = () => <InventoryTab />;
 const FinanceTabSection: React.FC = () => <FinanceTab />;
 const EmployeeKPIsSection: React.FC = () => <EmployeeKPIs />;
 
 const TabBtn: React.FC<any> = ({ active, onClick, icon, label }) => (
-  <button onClick={onClick} className={`tab-btn ${active ? 'tab-btn-active' : 'tab-btn-inactive'}`}>
-    {icon} <span>{label}</span>
+  <button 
+    onClick={onClick} 
+    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl font-bold text-[9px] transition-all ${
+      active 
+        ? 'bg-primary text-primary-foreground shadow-md' 
+        : 'text-muted-foreground hover:text-foreground'
+    }`}
+  >
+    {icon}
+    <span className="mt-0.5 truncate max-w-full">{label}</span>
   </button>
 );
 
@@ -560,145 +560,6 @@ const KpiCard: React.FC<any> = ({ label, value, icon }) => (
   </div>
 );
 
-// ==========================================
-// ADMIN PANEL (Inventory)
-// ==========================================
-const AdminPanel: React.FC = () => {
-  const { products, updateProduct, deleteProduct, addProduct } = useApp();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-
-  const filteredProducts = products.filter(p => p.name.includes(searchTerm) || p.category.includes(searchTerm));
-
-  const handleOpenModal = (p: Product | null = null) => {
-    setEditingProduct(p);
-    setIsModalOpen(true);
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const productData = {
-      name: formData.get('name') as string,
-      category: formData.get('category') as string,
-      costPrice: Number(formData.get('costPrice')),
-      basePrice: Number(formData.get('basePrice')),
-      stock: Number(formData.get('stock')),
-      minStock: Number(formData.get('minStock')),
-      unit: formData.get('unit') as string,
-      isDeleted: false,
-    };
-
-    if (editingProduct) {
-      updateProduct({ ...productData, id: editingProduct.id, organization_id: editingProduct.organization_id });
-    } else {
-      addProduct(productData);
-    }
-    setIsModalOpen(false);
-  };
-
-  return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex flex-col gap-3 px-2">
-        <div className="relative">
-          <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-          <input type="text" placeholder="ابحث عن صنف..." className="input-field pr-12" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        </div>
-        <button onClick={() => handleOpenModal()} className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all">
-          <Plus size={20} /> إضافة صنف جديد
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 px-2">
-        {filteredProducts.map(product => {
-          const isLowStock = product.stock <= product.minStock;
-          return (
-            <div key={product.id} className={`bg-card rounded-3xl border ${isLowStock ? 'border-destructive/20 bg-destructive/5' : 'border-border'} p-5 shadow-sm space-y-4`}>
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <h3 className="font-black text-foreground text-lg">{product.name}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded text-[9px] font-black">{product.category}</span>
-                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[9px] font-black">{product.unit}</span>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => handleOpenModal(product)} className="p-2 bg-muted text-muted-foreground rounded-xl hover:text-primary"><Settings2 size={18}/></button>
-                  <button onClick={() => deleteProduct(product.id)} className="p-2 bg-muted text-muted-foreground rounded-xl hover:text-destructive"><Trash2 size={18}/></button>
-                </div>
-              </div>
-              <div className="flex justify-between items-center px-1">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-muted-foreground uppercase">المخزون</span>
-                  <div className="flex items-center gap-1">
-                    <span className={`font-black ${isLowStock ? 'text-destructive' : 'text-foreground'}`}>{product.stock}</span>
-                    {isLowStock && <AlertTriangle size={14} className="text-destructive animate-pulse" />}
-                  </div>
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] font-black text-muted-foreground uppercase">السعر</span>
-                  <span className="font-black text-primary">{product.basePrice.toLocaleString()} {CURRENCY}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {isModalOpen && (
-        <div className="modal-overlay p-4">
-          <div className="bg-card rounded-[3rem] w-full max-w-lg shadow-2xl animate-zoom-in overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="p-6 bg-foreground text-background flex justify-between items-center sticky top-0 z-10">
-              <h2 className="text-xl font-black">{editingProduct ? 'تعديل الصنف' : 'إضافة صنف جديد'}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-background/40 p-2"><X size={24} /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-5 text-end">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mr-2">اسم المادة</label>
-                <input name="name" required defaultValue={editingProduct?.name} className="input-field" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase mr-2">التكلفة</label>
-                  <input name="costPrice" type="number" required defaultValue={editingProduct?.costPrice} className="input-field" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase mr-2">سعر المبيع</label>
-                  <input name="basePrice" type="number" required defaultValue={editingProduct?.basePrice} className="input-field" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase mr-2">المخزون</label>
-                  <input name="stock" type="number" required defaultValue={editingProduct?.stock} className="input-field" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase mr-2">الحد الأدنى</label>
-                  <input name="minStock" type="number" required defaultValue={editingProduct?.minStock || 5} className="input-field" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase mr-2">الفئة</label>
-                  <input name="category" required defaultValue={editingProduct?.category} className="input-field" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase mr-2">الوحدة</label>
-                  <input name="unit" required defaultValue={editingProduct?.unit || 'قطعة'} className="input-field" />
-                </div>
-              </div>
-              <button type="submit" className="w-full bg-primary text-primary-foreground font-black py-5 rounded-[1.8rem] shadow-xl mt-4 active:scale-95 transition-all">
-                {editingProduct ? 'تحديث البيانات' : 'حفظ الصنف'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 // ==========================================
 // DISTRIBUTOR VIEW
