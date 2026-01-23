@@ -311,7 +311,7 @@ const DeveloperHub: React.FC = () => {
 // OWNER DASHBOARD
 // ==========================================
 const OwnerDashboard: React.FC = () => {
-  const { sales = [], payments = [], products = [], users = [], customers = [], logout, addDistributor, pendingEmployees = [] } = useApp();
+  const { user, sales = [], payments = [], products = [], users = [], customers = [], logout, addDistributor, pendingEmployees = [] } = useApp();
   const [activeTab, setActiveTab] = useState<'daily' | 'team' | 'inventory' | 'customers' | 'finance'>('daily');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -369,7 +369,7 @@ const OwnerDashboard: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground"><ShieldCheck size={20} /></div>
           <div>
-            <h1 className="text-lg font-black text-foreground leading-none">لوحة المالك</h1>
+            <h1 className="text-lg font-black text-foreground leading-none">لوحة المالك ({user?.name || 'المستخدم'})</h1>
             <p className="text-muted-foreground text-[9px] font-bold mt-1">الإدارة المالية الذكية</p>
           </div>
         </div>
@@ -634,7 +634,7 @@ const DistributorView: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground"><Calculator size={20} /></div>
           <div>
-            <h1 className="text-lg font-black text-foreground leading-none">{isReadOnly ? 'التدقيق المالي' : 'الموزع الميداني'}</h1>
+            <h1 className="text-lg font-black text-foreground leading-none">{isReadOnly ? 'المحاسب المالي' : 'الموزع الميداني'} ({user?.name || 'المستخدم'})</h1>
             <p className="text-muted-foreground text-[9px] font-bold mt-1">{isReadOnly ? 'وضع العرض فقط' : 'إنشاء فواتير وتحصيل'}</p>
           </div>
         </div>
@@ -721,13 +721,13 @@ const DistributorView: React.FC = () => {
 // ACCOUNTANT VIEW
 // ==========================================
 const AccountantView: React.FC = () => {
-  const { sales, payments, customers, logout } = useApp();
+  const { user, sales, payments, customers, logout } = useApp();
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in" dir="rtl">
       <div className="flex items-center justify-between bg-card px-5 py-4 rounded-[1.8rem] shadow-sm border">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-black text-foreground tracking-tight">التدقيق المالي</h1>
+          <h1 className="text-2xl font-black text-foreground tracking-tight">المحاسب المالي ({user?.name || 'المستخدم'})</h1>
           <p className="text-muted-foreground text-xs font-bold">متابعة دقيقة لكافة العمليات المالية.</p>
         </div>
         <button onClick={logout} className="w-10 h-10 flex items-center justify-center bg-destructive/10 text-destructive rounded-xl active:scale-90"><LogOut size={20} /></button>
