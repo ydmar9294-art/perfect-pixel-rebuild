@@ -347,66 +347,109 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const loginDeveloper = async (email: string, pass: string): Promise<boolean> => {
     isInternalAuthOp.current = true;
     try {
-      // Check if developer exists
+      // Check if developer exists in our tables
       const devCheck = await supabase.from('user_roles').select('id').eq('role', 'DEVELOPER').limit(1);
       const devExists = (devCheck.data?.length || 0) > 0;
 
       if (!devExists) {
-        // First developer - create account
+        // No developer in system - try to create or use existing auth user
+        
+        // First, try to sign up
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: email.trim(),
           password: pass
         });
 
-        if (signUpError) throw signUpError;
+        let userId: string | null = null;
 
-        if (signUpData.user) {
-          // Create profile
-          await supabase.from('profiles').insert({
-            id: signUpData.user.id,
-            full_name: 'المطور الرئيسي',
-            role: 'DEVELOPER'
-          });
+        if (signUpError) {
+          // If user already exists in auth, try to login instead
+          if (signUpError.message?.includes('already registered') || signUpError.code === 'user_already_exists') {
+            const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+              email: email.trim(),
+              password: pass
+            });
+            
+            if (loginError) {
+              addNotification('كلمة المرور غير صحيحة', 'error');
+              return false;
+            }
+            
+            userId = loginData.user?.id || null;
+          } else {
+            throw signUpError;
+          }
+        } else {
+          userId = signUpData.user?.id || null;
+        }
+
+        if (userId) {
+          // Create profile if not exists
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', userId)
+            .maybeSingle();
+            
+          if (!existingProfile) {
+            await supabase.from('profiles').insert({
+              id: userId,
+              full_name: 'المطور الرئيسي',
+              role: 'DEVELOPER'
+            });
+          } else {
+            await supabase.from('profiles').update({
+              role: 'DEVELOPER'
+            }).eq('id', userId);
+          }
 
           // Add developer role
-          await supabase.from('user_roles').insert({
-            user_id: signUpData.user.id,
+          const { error: roleError } = await supabase.from('user_roles').insert({
+            user_id: userId,
             role: 'DEVELOPER'
           });
-
-          addNotification('تم إنشاء حساب المطور بنجاح', 'success');
           
-          // Login
-          await login(email, pass);
+          if (roleError && !roleError.message?.includes('duplicate')) {
+            throw roleError;
+          }
+
+          addNotification('تم تفعيل حساب المطور بنجاح', 'success');
+          
+          // Resolve profile to set state
+          await resolveProfile(userId);
+          setDeveloperExists(true);
           return true;
         }
       } else {
         // Developer already exists - try to login (only one developer allowed)
-        try {
-          await login(email, pass);
-          
-          // Check if the logged-in user has developer role
-          const { data: session } = await supabase.auth.getSession();
-          if (session?.session?.user) {
-            const { data: roles } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.session.user.id)
-              .eq('role', 'DEVELOPER')
-              .limit(1);
-            
-            if (!roles || roles.length === 0) {
-              // User is not a developer - logout and show error
-              await supabase.auth.signOut();
-              addNotification('يوجد مطور مسجل بالفعل. لا يمكن إضافة مطور آخر.', 'error');
-              return false;
-            }
-          }
-          return true;
-        } catch (loginErr) {
-          // If login fails, it's not the developer account
-          addNotification('بيانات المطور غير صحيحة أو يوجد مطور آخر بالفعل', 'error');
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: pass
+        });
+        
+        if (loginError) {
+          addNotification('بيانات المطور غير صحيحة', 'error');
           return false;
+        }
+        
+        if (loginData.user) {
+          // Check if the logged-in user has developer role
+          const { data: roles } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', loginData.user.id)
+            .eq('role', 'DEVELOPER')
+            .limit(1);
+          
+          if (!roles || roles.length === 0) {
+            // User is not a developer - logout and show error
+            await supabase.auth.signOut();
+            addNotification('يوجد مطور مسجل بالفعل. لا يمكن إضافة مطور آخر.', 'error');
+            return false;
+          }
+          
+          await resolveProfile(loginData.user.id);
+          return true;
         }
       }
       return false;
