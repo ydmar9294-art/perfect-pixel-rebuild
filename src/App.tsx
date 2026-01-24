@@ -28,6 +28,8 @@ import UnifiedActivation from '@/components/auth/UnifiedActivation';
 // ==========================================
 // LOGIN VIEW
 // ==========================================
+import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
+
 const LoginView: React.FC = () => {
   const { login, loginDeveloper, isLoading, addNotification, developerExists } = useApp();
   const [mode, setMode] = useState<'login' | 'activate'>('login');
@@ -36,6 +38,17 @@ const LoginView: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [localLoading, setLocalLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [tabSwitching, setTabSwitching] = useState(false);
+
+  const handleTabSwitch = (newMode: 'login' | 'activate') => {
+    if (mode === newMode) return;
+    setTabSwitching(true);
+    setTimeout(() => {
+      setMode(newMode);
+      setTimeout(() => setTabSwitching(false), 100);
+    }, 150);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,54 +76,53 @@ const LoginView: React.FC = () => {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email.trim()) {
-      addNotification("أدخل البريد الإلكتروني أولاً", "warning");
-      return;
-    }
-    setLocalLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: window.location.origin
-      });
-      if (error) throw error;
-      addNotification("تم إرسال رابط إعادة تعيين كلمة المرور", "success");
-    } catch (err: any) {
-      addNotification(err.message || "فشل إرسال الرابط", "error");
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
   return (
     <div className={`min-h-screen flex flex-col font-tajawal relative ${isDeveloperMode ? 'bg-slate-900' : 'bg-background'}`} dir="rtl">
-      <div className={`${isDeveloperMode ? 'bg-slate-800 border-b border-white/5' : 'bg-slate-900'} pt-14 pb-12 px-6 relative overflow-hidden flex flex-col items-center shrink-0`}>
+      {/* Header Section */}
+      <div className={`${isDeveloperMode ? 'bg-slate-800 border-b border-white/5' : 'bg-slate-900'} pt-14 pb-16 px-6 relative overflow-hidden flex flex-col items-center shrink-0`}>
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
-        <div className={`w-20 h-20 rounded-[1.8rem] flex items-center justify-center shadow-2xl mb-5 z-10 border-4 border-white/5 ${isDeveloperMode ? 'bg-primary' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
+        
+        {/* Logo */}
+        <div className={`w-20 h-20 rounded-[1.8rem] flex items-center justify-center shadow-2xl mb-5 z-10 border-4 border-white/5 animate-float ${isDeveloperMode ? 'bg-primary' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
           {isDeveloperMode ? <Terminal size={40} className="text-white" /> : <ShieldCheck size={40} className="text-white" />}
         </div>
-        <h1 className="text-3xl font-black text-white mb-1 tracking-tight z-10">
+        
+        {/* Title */}
+        <h1 className="text-3xl font-black text-white mb-2 tracking-tight z-10">
           {isDeveloperMode ? 'بوابة المطورين' : 'النظام الذكي'}
         </h1>
-        <p className="text-white/60 text-[10px] font-medium z-10 mb-8 text-center leading-relaxed">
+        
+        {/* Subtitle - Moved down with more spacing */}
+        <p className="text-white/50 text-[11px] font-bold z-10 text-center leading-relaxed max-w-[200px]">
           الخاص بإدارة البيع والتوزيع للمنشآت الصغيرة
         </p>
       </div>
 
-      <div className="max-w-md w-full mx-auto px-6 -mt-6 z-20 flex-1 flex flex-col pb-24">
+      {/* Card Section */}
+      <div className="max-w-md w-full mx-auto px-6 -mt-8 z-20 flex-1 flex flex-col pb-24">
         <div className="bg-card rounded-[2.5rem] shadow-xl border overflow-hidden">
-          <div className="flex bg-muted p-1 m-4 rounded-2xl border">
+          
+          {/* Tab Switcher with Animation */}
+          <div className={`flex bg-muted p-1.5 m-4 rounded-2xl border tab-container-animated ${tabSwitching ? 'switching' : ''}`}>
             {!isDeveloperMode ? (
               <>
                 <button 
-                  onClick={() => setMode('login')} 
-                  className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mode === 'login' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                  onClick={() => handleTabSwitch('login')} 
+                  className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
+                    mode === 'login' 
+                      ? 'bg-card text-foreground shadow-md' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
                 >
                   تسجيل الدخول
                 </button>
                 <button 
-                  onClick={() => setMode('activate')} 
-                  className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mode === 'activate' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                  onClick={() => handleTabSwitch('activate')} 
+                  className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
+                    mode === 'activate' 
+                      ? 'bg-card text-foreground shadow-md' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
                 >
                   تفعيل حساب جديد
                 </button>
@@ -120,49 +132,52 @@ const LoginView: React.FC = () => {
             )}
           </div>
           
-          {mode === 'login' || isDeveloperMode ? (
-            <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
-              <input 
-                type="email" 
-                placeholder="البريد الإلكتروني" 
-                value={email} 
-                disabled={localLoading}
-                className="input-field" 
-                onChange={e => setEmail(e.target.value)} 
-              />
-              <div className="relative">
+          {/* Content with Animation */}
+          <div className="tab-content-enter" key={mode}>
+            {mode === 'login' || isDeveloperMode ? (
+              <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
                 <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="كلمة المرور" 
-                  value={password} 
+                  type="email" 
+                  placeholder="البريد الإلكتروني" 
+                  value={email} 
                   disabled={localLoading}
                   className="input-field" 
-                  onChange={e => setPassword(e.target.value)} 
+                  onChange={e => setEmail(e.target.value)} 
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="كلمة المرور" 
+                    value={password} 
+                    disabled={localLoading}
+                    className="input-field" 
+                    onChange={e => setPassword(e.target.value)} 
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={localLoading || isLoading} 
+                  className="w-full py-5 bg-foreground text-background rounded-2xl font-black text-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl"
+                >
+                  {(localLoading || isLoading) ? <Loader2 size={24} className="animate-spin" /> : 'دخول النظام'}
                 </button>
+              </form>
+            ) : (
+              <div className="px-6 pb-6">
+                <UnifiedActivation />
               </div>
-              <button 
-                type="submit" 
-                disabled={localLoading || isLoading} 
-                className="w-full py-5 bg-foreground text-background rounded-2xl font-black text-lg flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
-              >
-                {(localLoading || isLoading) ? <Loader2 size={24} className="animate-spin" /> : 'دخول النظام'}
-              </button>
-            </form>
-          ) : (
-            <div className="px-6 pb-6">
-              <UnifiedActivation />
-            </div>
-          )}
+            )}
+          </div>
           
           {/* Forgot Password Link */}
           {mode === 'login' && !isDeveloperMode && (
-            <div className="px-8 pb-4">
+            <div className="px-8 pb-5">
               <button 
                 type="button" 
-                onClick={handleForgotPassword}
+                onClick={() => setShowForgotPassword(true)}
                 disabled={localLoading}
                 className="w-full text-xs font-bold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-2"
               >
@@ -172,6 +187,7 @@ const LoginView: React.FC = () => {
             </div>
           )}
           
+          {/* Developer Toggle */}
           <div className="px-8 pb-6 border-t border-border pt-4 flex justify-center">
             <button 
               onClick={() => setIsDeveloperMode(!isDeveloperMode)} 
@@ -183,6 +199,13 @@ const LoginView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal 
+        isOpen={showForgotPassword} 
+        onClose={() => setShowForgotPassword(false)}
+        initialEmail={email}
+      />
     </div>
   );
 };
