@@ -747,11 +747,39 @@ const ViewManager: React.FC = () => {
 // ==========================================
 const MainContent: React.FC = () => {
   const { user, isLoading } = useApp();
+  const [showRetry, setShowRetry] = useState(false);
+
+  // إظهار زر إعادة المحاولة بعد 5 ثواني
+  React.useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => setShowRetry(true), 5000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowRetry(false);
+    }
+  }, [isLoading]);
+
+  const handleRetry = () => {
+    window.location.reload();
+  };
 
   if (isLoading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-slate-900">
       <Loader2 size={48} className="animate-spin text-primary mb-4" />
-      <p className="text-white/20 font-black text-[10px] uppercase tracking-[0.3em]">Smart System Initialization</p>
+      <p className="text-white/40 font-black text-sm mb-2">جارٍ تحميل النظام...</p>
+      <p className="text-white/20 font-bold text-[10px] uppercase tracking-[0.2em]">Smart System</p>
+      
+      {showRetry && (
+        <div className="mt-8 text-center animate-fade-in">
+          <p className="text-white/30 text-xs mb-3">يبدو أن التحميل يستغرق وقتاً أطول</p>
+          <button
+            onClick={handleRetry}
+            className="px-6 py-3 bg-primary/20 text-primary rounded-xl font-bold text-sm hover:bg-primary/30 transition-colors"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      )}
     </div>
   );
 
