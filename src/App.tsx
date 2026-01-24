@@ -21,6 +21,9 @@ import { LicenseStatus, Product } from '@/types';
 import { FinanceTab } from '@/components/owner/FinanceTab';
 import { EmployeeKPIs } from '@/components/owner/EmployeeKPIs';
 import { InventoryTab } from '@/components/owner/InventoryTab';
+import DistributorDashboard from '@/components/distributor/DistributorDashboard';
+import AccountantDashboard from '@/components/accountant/AccountantDashboard';
+import UnifiedActivation from '@/components/auth/UnifiedActivation';
 
 // ==========================================
 // LOGIN VIEW
@@ -717,48 +720,7 @@ const DistributorView: React.FC = () => {
   );
 };
 
-// ==========================================
-// ACCOUNTANT VIEW
-// ==========================================
-const AccountantView: React.FC = () => {
-  const { user, sales, payments, customers, logout } = useApp();
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in" dir="rtl">
-      <div className="flex items-center justify-between bg-card px-5 py-4 rounded-[1.8rem] shadow-sm border">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-black text-foreground tracking-tight">المحاسب المالي ({user?.name || 'المستخدم'})</h1>
-          <p className="text-muted-foreground text-xs font-bold">متابعة دقيقة لكافة العمليات المالية.</p>
-        </div>
-        <button onClick={logout} className="w-10 h-10 flex items-center justify-center bg-destructive/10 text-destructive rounded-xl active:scale-90"><LogOut size={20} /></button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard label="المبيعات" val={sales.reduce((s,i) => s + i.grandTotal, 0)} icon={<Receipt/>} />
-        <StatCard label="التحصيلات" val={payments.reduce((s,i) => s + i.amount, 0)} icon={<DollarSign/>} />
-        <StatCard label="الزبائن" val={customers.length} icon={<Users/>} isCount />
-      </div>
-
-      <div className="bg-card rounded-[2rem] border overflow-hidden">
-        <div className="p-6 bg-muted border-b">
-          <h3 className="font-black text-foreground">آخر الفواتير</h3>
-        </div>
-        <div className="divide-y">
-          {sales.slice(0, 10).map(s => (
-            <div key={s.id} className="p-5 flex justify-between items-center hover:bg-muted/50 transition-colors">
-              <div>
-                <p className="font-black text-foreground">{s.customerName}</p>
-                <p className="text-[10px] text-muted-foreground font-bold">{new Date(s.timestamp).toLocaleString('ar-EG')}</p>
-              </div>
-              <p className="font-black text-primary">{s.grandTotal.toLocaleString()} {CURRENCY}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
+// AccountantView and DistributorView are now imported from their respective components
 const StatCard = ({ label, val, icon, isCount }: any) => (
   <div className="bg-card p-5 rounded-2xl border flex items-center gap-4">
     <div className="p-3 rounded-xl bg-primary/10 text-primary">{icon}</div>
@@ -794,7 +756,7 @@ const ViewManager: React.FC = () => {
   switch (user.role) {
     case UserRole.OWNER: return <OwnerDashboard />;
     case UserRole.EMPLOYEE:
-      return user.employeeType === EmployeeType.ACCOUNTANT ? <AccountantView /> : <DistributorView />;
+      return user.employeeType === EmployeeType.ACCOUNTANT ? <AccountantDashboard /> : <DistributorDashboard />;
     case UserRole.DEVELOPER: return <DeveloperHub />;
     default: return <OwnerDashboard />;
   }
