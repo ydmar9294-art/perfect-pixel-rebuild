@@ -7,8 +7,11 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
-  BarChart3,
-  LogOut
+  Calendar,
+  Filter,
+  Search,
+  Download,
+  BarChart3
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,11 +26,10 @@ import ReportsTab from './ReportsTab';
 type AccountantTabType = 'sales' | 'purchases' | 'sales-returns' | 'purchase-returns' | 'collections' | 'debts' | 'reports';
 
 const AccountantDashboard: React.FC = () => {
-  const { sales, customers, logout, user } = useApp();
+  const { sales, customers } = useApp();
   const [activeTab, setActiveTab] = useState<AccountantTabType>('sales');
   const [purchasesTotal, setPurchasesTotal] = useState(0);
   const [collectionsTotal, setCollectionsTotal] = useState(0);
-  const [loggingOut, setLoggingOut] = useState(false);
 
   // Calculate KPIs
   const totalSales = sales.filter(s => !s.isVoided).reduce((sum, s) => sum + Number(s.grandTotal), 0);
@@ -59,15 +61,6 @@ const AccountantDashboard: React.FC = () => {
     };
     loadTotals();
   }, []);
-
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      await logout();
-    } finally {
-      setLoggingOut(false);
-    }
-  };
 
   const tabs: { id: AccountantTabType; label: string; icon: React.ReactNode }[] = [
     { id: 'sales', label: 'المبيعات', icon: <FileText className="w-4 h-4" /> },
@@ -102,106 +95,77 @@ const AccountantDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* Premium Soft Header */}
-      <div className="header-premium pt-6 pb-10 px-4 md:px-6 sticky top-0 z-40">
-        {/* Soft Decorative Orbs */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/15 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-success/10 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4"></div>
+      {/* Header */}
+      <div className="bg-card border-b p-4 md:p-6 sticky top-0 z-40">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
+            <BarChart3 className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-foreground">لوحة المحاسب المالي</h1>
+            <p className="text-xs text-muted-foreground">إدارة جميع العمليات المالية</p>
+          </div>
+        </div>
         
-        <div className="relative z-10">
-          {/* Header Row */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="icon-container icon-container-lg icon-container-primary animate-float">
-                <BarChart3 className="w-8 h-8 drop-shadow-md" />
-              </div>
-              <div>
-                <h1 className="text-xl md:text-2xl font-black text-white">لوحة المحاسب المالي</h1>
-                {user && (
-                  <p className="text-white/50 text-xs font-bold mt-0.5">{user.name}</p>
-                )}
-              </div>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-2xl p-4 border border-success/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-bold">إجمالي المبيعات</span>
+              <TrendingUp className="w-5 h-5 text-success" />
             </div>
-            
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="btn-logout"
-            >
-              <LogOut className={`w-4 h-4 ${loggingOut ? 'animate-spin' : ''}`} />
-              <span className="text-xs font-black hidden sm:inline">خروج</span>
-            </button>
+            <p className="text-2xl font-black text-success">
+              {totalSales.toLocaleString('ar-SA')}
+            </p>
+            <p className="text-xs text-muted-foreground">ر.س</p>
           </div>
           
-          {/* Soft Glass KPI Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <div className="kpi-dark hover-lift">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-white/60 font-bold">إجمالي المبيعات</span>
-                <div className="icon-container icon-container-sm bg-success/20 text-success">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-              </div>
-              <p className="text-xl md:text-2xl font-black text-white">
-                {totalSales.toLocaleString('ar-SA')}
-              </p>
-              <p className="text-[10px] text-white/40 mt-1 font-medium">ر.س</p>
+          <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-4 border border-primary/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-bold">إجمالي المشتريات</span>
+              <ShoppingCart className="w-5 h-5 text-primary" />
             </div>
-            
-            <div className="kpi-dark hover-lift">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-white/60 font-bold">إجمالي المشتريات</span>
-                <div className="icon-container icon-container-sm bg-primary/20 text-primary">
-                  <ShoppingCart className="w-4 h-4" />
-                </div>
-              </div>
-              <p className="text-xl md:text-2xl font-black text-white">
-                {purchasesTotal.toLocaleString('ar-SA')}
-              </p>
-              <p className="text-[10px] text-white/40 mt-1 font-medium">ر.س</p>
+            <p className="text-2xl font-black text-primary">
+              {purchasesTotal.toLocaleString('ar-SA')}
+            </p>
+            <p className="text-xs text-muted-foreground">ر.س</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-2xl p-4 border border-success/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-bold">إجمالي التحصيلات</span>
+              <Wallet className="w-5 h-5 text-success" />
             </div>
-            
-            <div className="kpi-dark hover-lift">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-white/60 font-bold">إجمالي التحصيلات</span>
-                <div className="icon-container icon-container-sm bg-success/20 text-success">
-                  <Wallet className="w-4 h-4" />
-                </div>
-              </div>
-              <p className="text-xl md:text-2xl font-black text-white">
-                {collectionsTotal.toLocaleString('ar-SA')}
-              </p>
-              <p className="text-[10px] text-white/40 mt-1 font-medium">ر.س</p>
+            <p className="text-2xl font-black text-success">
+              {collectionsTotal.toLocaleString('ar-SA')}
+            </p>
+            <p className="text-xs text-muted-foreground">ر.س</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-destructive/10 to-destructive/5 rounded-2xl p-4 border border-destructive/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-bold">إجمالي الديون</span>
+              <TrendingDown className="w-5 h-5 text-destructive" />
             </div>
-            
-            <div className="kpi-dark hover-lift">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-white/60 font-bold">إجمالي الديون</span>
-                <div className="icon-container icon-container-sm bg-destructive/20 text-destructive">
-                  <TrendingDown className="w-4 h-4" />
-                </div>
-              </div>
-              <p className="text-xl md:text-2xl font-black text-white">
-                {totalDebt.toLocaleString('ar-SA')}
-              </p>
-              <p className="text-[10px] text-white/40 mt-1 font-medium">ر.س</p>
-            </div>
+            <p className="text-2xl font-black text-destructive">
+              {totalDebt.toLocaleString('ar-SA')}
+            </p>
+            <p className="text-xs text-muted-foreground">ر.س</p>
           </div>
         </div>
       </div>
 
-      {/* Soft Tab Navigation */}
-      <div className="bg-card/95 backdrop-blur-md border-b border-border/30 overflow-x-auto no-scrollbar sticky top-[180px] md:top-[200px] z-30">
-        <div className="flex p-2.5 gap-2 min-w-max">
+      {/* Tab Navigation */}
+      <div className="bg-card border-b overflow-x-auto no-scrollbar sticky top-[180px] md:top-[200px] z-30">
+        <div className="flex p-2 gap-1 min-w-max">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl font-black text-sm transition-all duration-300 whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-foreground text-background shadow-lg shadow-foreground/10 scale-[1.02]'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'bg-foreground text-background shadow-lg'
+                  : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               {tab.icon}
@@ -211,11 +175,9 @@ const AccountantDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Soft Content Area */}
+      {/* Tab Content */}
       <div className="p-4 md:p-6 pb-8">
-        <div className="animate-in">
-          {renderTabContent()}
-        </div>
+        {renderTabContent()}
       </div>
     </div>
   );

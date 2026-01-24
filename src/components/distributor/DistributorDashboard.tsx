@@ -63,67 +63,67 @@ const DistributorDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24" dir="rtl">
-      {/* Premium Header with Soft Gradients */}
-      <div className="header-premium pt-6 pb-12 px-4">
-        {/* Soft Decorative Orbs */}
-        <div className="absolute top-0 right-0 w-72 h-72 bg-primary/15 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3"></div>
-        <div className="absolute bottom-0 left-0 w-56 h-56 bg-indigo-500/10 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/4"></div>
+      {/* Professional Header with Dark Gradient */}
+      <div className="bg-slate-900 pt-6 pb-10 px-4 relative overflow-hidden">
+        {/* Modern Oval/Circular Background Pattern */}
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(ellipse 60% 40% at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 70%)', backgroundSize: '80px 60px' }}></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
         
         {/* Header Content */}
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              {/* Premium Oval Icon */}
-              <div className="icon-container icon-container-lg icon-container-primary animate-float">
-                <FileText className="w-8 h-8 drop-shadow-md" />
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 bg-gradient-to-br from-primary via-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl shadow-primary/40 animate-float ring-4 ring-white/10">
+                <FileText className="w-7 h-7 text-white drop-shadow-lg" />
               </div>
               <div>
                 <h1 className="text-xl font-black text-white">لوحة الموزع</h1>
                 {user && (
-                  <p className="text-white/50 text-xs font-bold mt-0.5">{user.name}</p>
+                  <p className="text-white/50 text-xs font-medium">{user.name}</p>
                 )}
               </div>
             </div>
             
-            {/* Soft Logout Button */}
+            {/* Logout Button */}
             <button
               onClick={handleLogout}
               disabled={loggingOut}
-              className="btn-logout"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white rounded-xl transition-all duration-200 border border-white/10"
             >
               <LogOut className={`w-4 h-4 ${loggingOut ? 'animate-spin' : ''}`} />
-              <span className="text-xs font-black">خروج</span>
+              <span className="text-xs font-bold">خروج</span>
             </button>
           </div>
           
-          {/* Soft Glass KPI Cards */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="kpi-dark">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="icon-container icon-container-sm bg-primary/20 text-primary">
-                  <TrendingUp className="w-4 h-4" />
+          {/* Quick Stats - Premium Style */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 bg-primary/20 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-primary" />
                 </div>
                 <span className="text-xs text-white/60 font-bold">مبيعات اليوم</span>
               </div>
               <p className="text-2xl font-black text-white">
                 {todayTotal.toLocaleString('ar-SA')}
               </p>
-              <p className="text-xs text-white/40 mt-1.5 font-medium">
+              <p className="text-xs text-white/40 mt-1">
                 {todaySales.length} فاتورة
               </p>
             </div>
             
-            <div className="kpi-dark">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="icon-container icon-container-sm bg-warning/20 text-warning">
-                  <Wallet className="w-4 h-4" />
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 bg-warning/20 rounded-xl flex items-center justify-center">
+                  <Wallet className="w-4 h-4 text-warning" />
                 </div>
                 <span className="text-xs text-white/60 font-bold">إجمالي الديون</span>
               </div>
               <p className="text-2xl font-black text-white">
                 {totalDebt.toLocaleString('ar-SA')}
               </p>
-              <p className="text-xs text-white/40 mt-1.5 font-medium">
+              <p className="text-xs text-white/40 mt-1">
                 {customers.filter(c => Number(c.balance) > 0).length} عميل
               </p>
             </div>
@@ -131,24 +131,24 @@ const DistributorDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Soft Content Container */}
-      <div className="p-4 -mt-6 relative z-20">
-        <div className="content-container animate-in">
+      {/* Tab Content with smooth top margin */}
+      <div className="p-4 -mt-4 relative z-20">
+        <div className="bg-card rounded-t-3xl shadow-lg border -mx-4 px-4 pt-6 min-h-[60vh]">
           {renderTabContent()}
         </div>
       </div>
 
-      {/* Premium Soft Bottom Navigation */}
-      <div className="nav-bottom">
-        <div className="flex justify-around gap-2 max-w-lg mx-auto">
+      {/* Bottom Navigation - Premium Style */}
+      <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-white/10 p-2 z-50">
+        <div className="flex justify-around gap-1 max-w-lg mx-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`nav-tab ${
+              className={`flex-1 flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-2xl text-[10px] font-black transition-all duration-200 ${
                 activeTab === tab.id 
-                  ? 'nav-tab-active' 
-                  : 'nav-tab-inactive'
+                  ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-105' 
+                  : 'text-white/50 hover:text-white/80 hover:bg-white/10'
               }`}
             >
               {tab.icon}
