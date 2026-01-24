@@ -72,8 +72,8 @@ const DistributorDashboard: React.FC = () => {
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/30 animate-float">
-                <FileText className="w-6 h-6 text-white" />
+              <div className="w-14 h-14 bg-gradient-to-br from-primary via-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl shadow-primary/40 animate-float ring-4 ring-white/10">
+                <FileText className="w-7 h-7 text-white drop-shadow-lg" />
               </div>
               <div>
                 <h1 className="text-xl font-black text-white">لوحة الموزع</h1>
