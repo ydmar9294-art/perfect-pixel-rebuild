@@ -548,26 +548,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const devExists = (devCheck.data?.length || 0) > 0;
 
       if (!devExists) {
-        // No developer in system - try to create or use existing auth user
-        
-        // First, try to sign up
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        // No developer in system - first try to login (user might exist in auth but not in our tables)
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password: pass
         });
 
         let userId: string | null = null;
 
-        if (signUpError) {
-          // If user already exists, show generic message to prevent account enumeration
-          if (signUpError.message?.includes('already registered') || signUpError.code === 'user_already_exists') {
-            addNotification('حدث خطأ في التسجيل. يرجى استخدام تسجيل الدخول إذا كان لديك حساب مسبق.', 'error');
-            return false;
+        if (loginError) {
+          // If login fails, try to sign up
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: email.trim(),
+            password: pass
+          });
+
+          if (signUpError) {
+            if (signUpError.message?.includes('already registered') || signUpError.code === 'user_already_exists') {
+              addNotification('خطأ في البريد أو كلمة المرور', 'error');
+              return false;
+            } else {
+              throw signUpError;
+            }
           } else {
-            throw signUpError;
+            userId = signUpData.user?.id || null;
           }
         } else {
-          userId = signUpData.user?.id || null;
+          // Login successful - user exists in auth
+          userId = loginData.user?.id || null;
         }
 
         if (userId) {
