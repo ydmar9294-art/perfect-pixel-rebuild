@@ -78,13 +78,15 @@ const LoginView: React.FC = () => {
 
   return (
     <div className={`min-h-screen flex flex-col font-tajawal relative ${isDeveloperMode ? 'bg-slate-900' : 'bg-background'}`} dir="rtl">
-      {/* Header Section */}
-      <div className={`${isDeveloperMode ? 'bg-slate-800 border-b border-white/5' : 'bg-slate-900'} pt-14 pb-16 px-6 relative overflow-hidden flex flex-col items-center shrink-0`}>
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
+      {/* Premium Header Section with Soft Design */}
+      <div className={`${isDeveloperMode ? 'bg-slate-800' : 'header-premium'} pt-14 pb-16 px-6 relative overflow-hidden flex flex-col items-center shrink-0`}>
+        {/* Soft Decorative Orbs */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/15 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4"></div>
         
-        {/* Logo */}
-        <div className={`w-20 h-20 rounded-[1.8rem] flex items-center justify-center shadow-2xl mb-5 z-10 border-4 border-white/5 animate-float ${isDeveloperMode ? 'bg-primary' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
-          {isDeveloperMode ? <Terminal size={40} className="text-white" /> : <ShieldCheck size={40} className="text-white" />}
+        {/* Premium Oval Logo */}
+        <div className={`icon-container icon-container-lg animate-float mb-5 z-10 ring-4 ring-white/10 ${isDeveloperMode ? 'bg-primary' : 'bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600'}`} style={{ boxShadow: '0 8px 40px -8px hsl(221 83% 53% / 0.6)' }}>
+          {isDeveloperMode ? <Terminal size={32} className="text-white drop-shadow-md" /> : <ShieldCheck size={32} className="text-white drop-shadow-md" />}
         </div>
         
         {/* Title */}
@@ -92,18 +94,18 @@ const LoginView: React.FC = () => {
           {isDeveloperMode ? 'بوابة المطورين' : 'النظام الذكي'}
         </h1>
         
-        {/* Subtitle - Moved down with more spacing */}
+        {/* Subtitle */}
         <p className="text-white/50 text-[11px] font-bold z-10 text-center leading-relaxed max-w-[200px]">
           الخاص بإدارة البيع والتوزيع للمنشآت الصغيرة
         </p>
       </div>
 
-      {/* Card Section */}
+      {/* Soft Card Section */}
       <div className="max-w-md w-full mx-auto px-6 -mt-8 z-20 flex-1 flex flex-col pb-24">
-        <div className="bg-card rounded-[2.5rem] shadow-xl border overflow-hidden">
+        <div className="card-soft overflow-hidden" style={{ borderRadius: '2.5rem' }}>
           
-          {/* Tab Switcher with Animation */}
-          <div className={`flex bg-muted p-1.5 m-4 rounded-2xl border tab-container-animated ${tabSwitching ? 'switching' : ''}`}>
+          {/* Soft Tab Switcher */}
+          <div className={`flex bg-muted/50 p-2 m-4 rounded-2xl border border-border/30 tab-container-animated ${tabSwitching ? 'switching' : ''}`}>
             {!isDeveloperMode ? (
               <>
                 <button 
@@ -132,7 +134,7 @@ const LoginView: React.FC = () => {
             )}
           </div>
           
-          {/* Content with Animation */}
+          {/* Content with Soft Animation */}
           <div className="tab-content-enter" key={mode}>
             {mode === 'login' || isDeveloperMode ? (
               <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
@@ -153,14 +155,15 @@ const LoginView: React.FC = () => {
                     className="input-field" 
                     onChange={e => setPassword(e.target.value)} 
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted">
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
                 <button 
                   type="submit" 
                   disabled={localLoading || isLoading} 
-                  className="w-full py-5 bg-foreground text-background rounded-2xl font-black text-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl"
+                  className="w-full py-5 bg-foreground text-background rounded-2xl font-black text-lg flex items-center justify-center gap-3 active:scale-[0.97] transition-all duration-300 disabled:opacity-50 hover:-translate-y-0.5"
+                  style={{ boxShadow: '0 8px 30px -8px hsl(215 25% 27% / 0.4)' }}
                 >
                   {(localLoading || isLoading) ? <Loader2 size={24} className="animate-spin" /> : 'دخول النظام'}
                 </button>
@@ -179,7 +182,7 @@ const LoginView: React.FC = () => {
                 type="button" 
                 onClick={() => setShowForgotPassword(true)}
                 disabled={localLoading}
-                className="w-full text-xs font-bold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-2"
+                className="w-full text-xs font-bold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-2 py-2 rounded-xl hover:bg-primary/5"
               >
                 <Key size={14} />
                 نسيت كلمة المرور؟
@@ -188,10 +191,10 @@ const LoginView: React.FC = () => {
           )}
           
           {/* Developer Toggle */}
-          <div className="px-8 pb-6 border-t border-border pt-4 flex justify-center">
+          <div className="px-8 pb-6 border-t border-border/30 pt-4 flex justify-center">
             <button 
               onClick={() => setIsDeveloperMode(!isDeveloperMode)} 
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all"
+              className="icon-container icon-container-sm bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all duration-300"
               title={isDeveloperMode ? 'العودة لواجهة المستخدم' : 'بوابة المطورين'}
             >
               {isDeveloperMode ? <Store size={18} /> : <Terminal size={18} />}
@@ -226,28 +229,31 @@ const DeveloperHub: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in pb-12 text-end" dir="rtl">
-      <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
+      {/* Premium Developer Header */}
+      <div className="header-premium rounded-[2.5rem] p-10 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/15 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4"></div>
+        
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
           <div>
             <h1 className="text-4xl font-black flex items-center gap-4">نظام التراخيص <Key className="text-primary" /></h1>
             <p className="text-slate-400 font-bold mt-2">إصدار ومراقبة مفاتيح التفعيل السحابية.</p>
           </div>
           <div className="flex gap-3">
-            <button onClick={() => setShowForm(true)} className="px-8 py-4 bg-primary rounded-2xl font-black shadow-xl flex items-center gap-3 active:scale-95 transition-all"><UserPlus size={20} /> إصدار ترخيص</button>
-            <button onClick={logout} className="px-6 py-4 bg-white/10 rounded-2xl font-black hover:bg-destructive/20 active:scale-95 transition-all"><LogOut size={20} /></button>
+            <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-3"><UserPlus size={20} /> إصدار ترخيص</button>
+            <button onClick={logout} className="btn-logout"><LogOut size={20} /></button>
           </div>
         </div>
       </div>
 
-      <div className="bg-card rounded-[2.5rem] p-8 border shadow-sm">
+      <div className="card-soft p-8">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-xl font-black flex items-center gap-2"><Activity size={20} className="text-primary"/> سجل التراخيص الصادرة</h2>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {licenses.map((license) => (
-            <div key={license.id} className={`p-6 rounded-[2.5rem] border-2 transition-all ${license.status === LicenseStatus.SUSPENDED ? 'bg-destructive/5 border-destructive/20' : 'bg-card border-border shadow-md'}`}>
+            <div key={license.id} className={`p-6 rounded-3xl border-2 transition-all duration-300 hover-lift ${license.status === LicenseStatus.SUSPENDED ? 'bg-destructive/5 border-destructive/20' : 'card-soft border-border/30'}`}>
               <div className="flex justify-between items-start mb-4">
                 <span className={`badge ${license.status === LicenseStatus.ACTIVE ? 'badge-success' : license.status === LicenseStatus.READY ? 'badge-primary' : 'bg-destructive text-white'}`}>
                   {license.status === LicenseStatus.ACTIVE ? 'مفعل' : license.status === LicenseStatus.READY ? 'جاهز للتسليم' : 'موقوف'}
@@ -260,20 +266,20 @@ const DeveloperHub: React.FC = () => {
               
               <h3 className="font-black text-foreground text-lg mb-1">{license.orgName}</h3>
               
-              <div onClick={() => copyKey(license.licenseKey)} className="bg-muted p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-muted/80 transition-colors mb-6 group">
+              <div onClick={() => copyKey(license.licenseKey)} className="bg-muted/50 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-muted transition-all duration-300 mb-6 group border border-border/30">
                 <span className="font-mono font-black text-primary tracking-wider">{license.licenseKey}</span>
-                {copied === license.licenseKey ? <CheckCircle2 size={16} className="text-success" /> : <Copy size={16} className="text-muted-foreground group-hover:text-primary" />}
+                {copied === license.licenseKey ? <CheckCircle2 size={16} className="text-success" /> : <Copy size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />}
               </div>
 
               {license.status !== LicenseStatus.READY && (
                 <div className="flex gap-2 mb-6">
                   {license.status === LicenseStatus.ACTIVE ? (
-                    <button onClick={() => updateLicenseStatus(license.id, license.ownerId || null, LicenseStatus.SUSPENDED)} className="flex-1 py-3 bg-destructive/10 text-destructive rounded-xl text-[10px] font-black flex items-center justify-center gap-2"><Lock size={14}/> إيقاف</button>
+                    <button onClick={() => updateLicenseStatus(license.id, license.ownerId || null, LicenseStatus.SUSPENDED)} className="flex-1 py-3 bg-destructive/10 text-destructive rounded-2xl text-[10px] font-black flex items-center justify-center gap-2 hover:bg-destructive/20 transition-colors"><Lock size={14}/> إيقاف</button>
                   ) : (
-                    <button onClick={() => updateLicenseStatus(license.id, license.ownerId || null, LicenseStatus.ACTIVE)} className="flex-1 py-3 bg-success text-white rounded-xl text-[10px] font-black flex items-center justify-center gap-2"><Unlock size={14}/> تفعيل</button>
+                    <button onClick={() => updateLicenseStatus(license.id, license.ownerId || null, LicenseStatus.ACTIVE)} className="flex-1 py-3 bg-success text-success-foreground rounded-2xl text-[10px] font-black flex items-center justify-center gap-2 hover:bg-success/90 transition-colors"><Unlock size={14}/> تفعيل</button>
                   )}
                   {license.type === 'TRIAL' && (
-                    <button onClick={() => makeLicensePermanent(license.id, license.ownerId || null)} className="flex-1 py-3 bg-primary/10 text-primary rounded-xl text-[10px] font-black flex items-center justify-center gap-2"><ShieldCheck size={14}/> تمليك</button>
+                    <button onClick={() => makeLicensePermanent(license.id, license.ownerId || null)} className="flex-1 py-3 bg-primary/10 text-primary rounded-2xl text-[10px] font-black flex items-center justify-center gap-2 hover:bg-primary/20 transition-colors"><ShieldCheck size={14}/> تمليك</button>
                   )}
                 </div>
               )}
@@ -288,8 +294,8 @@ const DeveloperHub: React.FC = () => {
       </div>
 
       {showForm && (
-        <div className="modal-overlay p-4">
-          <div className="bg-card rounded-[3rem] w-full max-w-md p-8 space-y-6 animate-zoom-in">
+        <div className="modal-overlay">
+          <div className="modal-content w-full max-w-md p-8 space-y-6">
             <h3 className="text-xl font-black">إصدار ترخيص جديد</h3>
             <form onSubmit={async (e) => {
               e.preventDefault();
@@ -303,8 +309,8 @@ const DeveloperHub: React.FC = () => {
                 <option value="PERMANENT">دائم (Permanent)</option>
               </select>
               <input name="days" type="number" defaultValue="30" placeholder="عدد أيام التجربة" className="input-field" />
-              <button type="submit" className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-black shadow-lg">توليد الترخيص</button>
-              <button type="button" onClick={() => setShowForm(false)} className="w-full py-4 bg-muted text-muted-foreground rounded-xl font-black">إغلاق</button>
+              <button type="submit" className="btn-primary w-full">توليد الترخيص</button>
+              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary w-full">إغلاق</button>
             </form>
           </div>
         </div>
@@ -371,18 +377,24 @@ const OwnerDashboard: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 pb-24 text-end animate-fade-in" dir="rtl">
-      <div className="flex items-center justify-between bg-card px-5 py-4 rounded-[1.8rem] shadow-sm border mx-2">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground"><ShieldCheck size={20} /></div>
+      {/* Premium Owner Header */}
+      <div className="flex items-center justify-between card-soft px-5 py-4 mx-2">
+        <div className="flex items-center gap-4">
+          <div className="icon-container icon-container-md icon-container-primary animate-gentle-bounce">
+            <ShieldCheck size={22} />
+          </div>
           <div>
             <h1 className="text-lg font-black text-foreground leading-none">لوحة المالك ({user?.name || 'المستخدم'})</h1>
             <p className="text-muted-foreground text-[9px] font-bold mt-1">الإدارة المالية الذكية</p>
           </div>
         </div>
-        <button onClick={logout} className="w-10 h-10 flex items-center justify-center bg-destructive/10 text-destructive rounded-xl active:scale-90"><LogOut size={20} /></button>
+        <button onClick={logout} className="icon-container icon-container-sm bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors">
+          <LogOut size={18} />
+        </button>
       </div>
 
-      <div className="sticky top-2 z-[100] mx-2 grid grid-cols-5 gap-1 bg-card/80 backdrop-blur-lg p-1.5 rounded-2xl border shadow-xl">
+      {/* Soft Tab Navigation */}
+      <div className="sticky top-2 z-[100] mx-2 grid grid-cols-5 gap-1.5 bg-card/90 backdrop-blur-xl p-2 rounded-2xl border border-border/30" style={{ boxShadow: 'var(--shadow-medium)' }}>
         <TabBtn active={activeTab === 'daily'} onClick={() => setActiveTab('daily')} icon={<LayoutDashboard size={16}/>} label="الرئيسية" />
         <TabBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Box size={16}/>} label="المخزون" />
         <TabBtn active={activeTab === 'team'} onClick={() => setActiveTab('team')} icon={<Users size={16}/>} label="الفريق" />
@@ -393,23 +405,23 @@ const OwnerDashboard: React.FC = () => {
       <div className="px-2 space-y-4">
         {activeTab === 'daily' && (
           <div className="space-y-4 animate-fade-in">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <KpiCard label="مبيعات اليوم" value={stats.todayRevenue.toLocaleString()} icon={<Receipt size={18}/>} />
               <KpiCard label="التحصيل" value={stats.totalCollections.toLocaleString()} icon={<Wallet size={18}/>} />
             </div>
-            <div className="bg-card p-6 rounded-[2.5rem] border shadow-sm h-72">
+            <div className="card-soft p-6 h-72">
               {isMounted && (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={stats.chartData}>
                     <defs>
                       <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15}/>
                         <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)" />
                     <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
-                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none' }} />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: 'var(--shadow-medium)' }} />
                     <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorRev)" strokeWidth={3} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -423,20 +435,20 @@ const OwnerDashboard: React.FC = () => {
 
         {activeTab === 'team' && (
           <div className="space-y-4 animate-fade-in">
-            <button onClick={() => setShowAddUserModal(true)} className="w-full py-5 bg-primary text-primary-foreground rounded-[1.8rem] font-black text-sm flex items-center justify-center gap-2 shadow-xl">
+            <button onClick={() => setShowAddUserModal(true)} className="btn-primary w-full py-5 text-sm flex items-center justify-center gap-2">
               <UserPlus size={18}/> إضافة موظف
             </button>
             
             {/* Pending Employees with codes */}
             {pendingEmployees.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <h3 className="font-black text-foreground text-sm flex items-center gap-2 px-2">
                   <Clock size={16} className="text-warning" />
                   أكواد تفعيل معلقة
                 </h3>
                 {pendingEmployees.map(pe => (
-                  <div key={pe.id} className="bg-warning/10 p-4 rounded-[2rem] border border-warning/20">
-                    <div className="flex justify-between items-start mb-2">
+                  <div key={pe.id} className="bg-warning/10 p-5 rounded-3xl border border-warning/20">
+                    <div className="flex justify-between items-start mb-3">
                       <div>
                         <p className="font-black text-foreground">{pe.name}</p>
                         <p className="text-[10px] text-muted-foreground">{pe.phone}</p>
@@ -447,7 +459,7 @@ const OwnerDashboard: React.FC = () => {
                     </div>
                     <div 
                       onClick={() => { navigator.clipboard.writeText(pe.activation_code); setCopiedId(pe.id); setTimeout(() => setCopiedId(null), 2000); }}
-                      className="bg-card p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-muted transition-colors"
+                      className="bg-card p-4 rounded-2xl flex justify-between items-center cursor-pointer hover:bg-muted transition-all duration-300 border border-border/30"
                     >
                       <span className="font-mono font-black text-primary tracking-wider text-sm">{pe.activation_code}</span>
                       {copiedId === pe.id ? <CheckCircle2 size={18} className="text-success" /> : <Copy size={18} className="text-muted-foreground" />}
@@ -460,15 +472,17 @@ const OwnerDashboard: React.FC = () => {
             {/* Active Team Members */}
             <div className="grid grid-cols-1 gap-3">
               {teamMembers.length === 0 && pendingEmployees.length === 0 ? (
-                <div className="bg-card p-8 rounded-[2.5rem] border text-center">
+                <div className="card-soft p-8 text-center">
                   <Users size={48} className="mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground font-bold">لا يوجد موظفين</p>
                 </div>
               ) : (
                 teamMembers.map(u => (
-                  <div key={u.id} className="bg-card p-5 rounded-[2.2rem] border shadow-sm flex justify-between items-center">
+                  <div key={u.id} className="card-soft p-5 flex justify-between items-center hover-lift">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-success/10 rounded-2xl flex items-center justify-center text-success"><CheckCircle2 size={24}/></div>
+                      <div className="icon-container icon-container-md icon-container-success">
+                        <CheckCircle2 size={22}/>
+                      </div>
                       <div>
                         <p className="font-black text-foreground text-sm">{u.name}</p>
                         <p className="text-[9px] font-black text-muted-foreground uppercase">
@@ -489,13 +503,13 @@ const OwnerDashboard: React.FC = () => {
         {activeTab === 'finance' && <FinanceTabSection />}
         
         {activeTab === 'customers' && (
-          <div className="space-y-3 animate-fade-in">
-            <div className="bg-destructive p-6 rounded-[2.5rem] text-destructive-foreground shadow-xl">
-              <p className="text-[10px] font-black opacity-60 mb-1">إجمالي ذمم السوق</p>
+          <div className="space-y-4 animate-fade-in">
+            <div className="bg-gradient-to-br from-destructive to-destructive/80 p-6 rounded-3xl text-destructive-foreground" style={{ boxShadow: '0 8px 30px -8px hsl(0 84% 60% / 0.4)' }}>
+              <p className="text-[10px] font-black opacity-70 mb-1">إجمالي ذمم السوق</p>
               <p className="text-3xl font-black">{customers.reduce((s, c) => s + c.balance, 0).toLocaleString()} {CURRENCY}</p>
             </div>
             {customers.map(c => (
-              <div key={c.id} className="bg-card p-5 rounded-[2.2rem] border shadow-sm flex justify-between items-center">
+              <div key={c.id} className="card-soft p-5 flex justify-between items-center hover-lift">
                 <p className="font-black text-foreground text-sm">{c.name}</p>
                 <p className={`font-black text-sm ${c.balance > 0 ? 'text-destructive' : 'text-success'}`}>{c.balance.toLocaleString()} {CURRENCY}</p>
               </div>
@@ -505,23 +519,25 @@ const OwnerDashboard: React.FC = () => {
       </div>
 
       {showAddUserModal && (
-        <div className="modal-overlay p-4">
-          <div className="bg-card rounded-[2.5rem] w-full max-w-md p-8 space-y-6 animate-zoom-in">
+        <div className="modal-overlay">
+          <div className="modal-content w-full max-w-md p-8 space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">{newEmployeeCode ? 'تم إنشاء كود التفعيل' : 'إضافة موظف جديد'}</h2>
-              <button onClick={closeEmployeeModal} className="p-2 bg-muted rounded-full"><X size={20}/></button>
+              <button onClick={closeEmployeeModal} className="icon-container icon-container-sm bg-muted hover:bg-muted/80 transition-colors">
+                <X size={18}/>
+              </button>
             </div>
             
             {newEmployeeCode ? (
               <div className="space-y-4">
-                <div className="bg-success/10 p-6 rounded-2xl border border-success/20 text-center">
+                <div className="bg-success/10 p-6 rounded-3xl border border-success/20 text-center">
                   <CheckCircle2 size={48} className="mx-auto text-success mb-3" />
                   <p className="text-sm text-muted-foreground mb-2">كود تفعيل الموظف:</p>
                   <p className="text-2xl font-mono font-black text-primary tracking-widest">{newEmployeeCode}</p>
                 </div>
                 
                 {newEmployeeData && (
-                  <div className="bg-muted p-4 rounded-xl space-y-2 text-sm">
+                  <div className="bg-muted/50 p-5 rounded-2xl space-y-2 text-sm border border-border/30">
                     <p><span className="text-muted-foreground">الاسم:</span> <span className="font-black">{newEmployeeData.name}</span></p>
                     <p><span className="text-muted-foreground">الهاتف:</span> <span className="font-black">{newEmployeeData.phone}</span></p>
                     <p><span className="text-muted-foreground">النوع:</span> <span className="font-black">{newEmployeeData.employee_type === EmployeeType.FIELD_AGENT ? 'موزع ميداني' : 'محاسب'}</span></p>
@@ -530,11 +546,11 @@ const OwnerDashboard: React.FC = () => {
                 
                 <button 
                   onClick={() => { navigator.clipboard.writeText(newEmployeeCode); }}
-                  className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black flex items-center justify-center gap-2"
+                  className="btn-primary w-full flex items-center justify-center gap-2"
                 >
                   <Copy size={18} /> نسخ الكود
                 </button>
-                <button onClick={closeEmployeeModal} className="w-full py-4 bg-muted text-muted-foreground rounded-2xl font-black">إغلاق</button>
+                <button onClick={closeEmployeeModal} className="btn-secondary w-full">إغلاق</button>
               </div>
             ) : (
               <form onSubmit={handleAddEmployee} className="space-y-4">
@@ -544,7 +560,7 @@ const OwnerDashboard: React.FC = () => {
                   <option value={EmployeeType.FIELD_AGENT}>موزع ميداني</option>
                   <option value={EmployeeType.ACCOUNTANT}>محاسب مالي</option>
                 </select>
-                <button type="submit" className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black">توليد كود التفعيل</button>
+                <button type="submit" className="btn-primary w-full">توليد كود التفعيل</button>
               </form>
             )}
           </div>
@@ -562,10 +578,10 @@ const EmployeeKPIsSection: React.FC = () => <EmployeeKPIs />;
 const TabBtn: React.FC<any> = ({ active, onClick, icon, label }) => (
   <button 
     onClick={onClick} 
-    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl font-bold text-[9px] transition-all ${
+    className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-xl font-bold text-[9px] transition-all duration-300 ${
       active 
-        ? 'bg-primary text-primary-foreground shadow-md' 
-        : 'text-muted-foreground hover:text-foreground'
+        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' 
+        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
     }`}
   >
     {icon}
@@ -574,8 +590,8 @@ const TabBtn: React.FC<any> = ({ active, onClick, icon, label }) => (
 );
 
 const KpiCard: React.FC<any> = ({ label, value, icon }) => (
-  <div className="kpi-card text-end">
-    <div className="p-3 rounded-2xl w-fit bg-primary/10 text-primary">{icon}</div>
+  <div className="kpi-card text-end hover-lift">
+    <div className="icon-container icon-container-sm icon-container-primary">{icon}</div>
     <div>
       <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1">{label}</span>
       <p className="text-2xl font-black text-foreground leading-none">{value} <span className="text-[11px] font-medium opacity-20">{CURRENCY}</span></p>

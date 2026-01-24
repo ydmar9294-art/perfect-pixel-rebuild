@@ -24,11 +24,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   if ((isSuspended || isExpired) && user.role !== UserRole.DEVELOPER) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center" dir="rtl">
-        <div className="max-w-md space-y-6 animate-zoom-in">
+      <div className="min-h-screen header-premium flex items-center justify-center p-6 text-center" dir="rtl">
+        {/* Soft Decorative Orbs */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-destructive/15 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-warning/10 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4"></div>
+        
+        <div className="max-w-md space-y-6 animate-zoom-in relative z-10">
           <div
-            className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl mx-auto mb-8 ${
-              isExpired ? 'bg-warning' : 'bg-destructive'
+            className={`icon-container w-24 h-24 mx-auto mb-8 ${
+              isExpired ? 'icon-container-warning' : 'icon-container-danger'
             }`}
           >
             <ShieldAlert size={48} />
@@ -47,7 +51,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div className="pt-8 flex flex-col gap-3">
             <a
               href="tel:09xxxxxxx"
-              className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black shadow-xl transition-transform active:scale-95 flex items-center justify-center gap-2"
+              className="btn-primary w-full py-4 flex items-center justify-center gap-2"
             >
               <Phone size={20} />
               اتصل بالإدارة المالية
@@ -55,7 +59,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
             <button
               onClick={logout}
-              className="w-full py-4 bg-white/10 text-white/60 rounded-2xl font-black flex items-center justify-center gap-2"
+              className="btn-logout w-full py-4 justify-center"
             >
               <LogOut size={20} />
               تسجيل الخروج
@@ -72,8 +76,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       dir="rtl"
     >
       <main className="flex-1 relative">
-        {/* Header with Notification Center */}
-        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b px-4 py-3 flex items-center justify-between">
+        {/* Soft Header with Notification Center */}
+        <div className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border/30 px-4 py-3 flex items-center justify-between" style={{ boxShadow: 'var(--shadow-soft)' }}>
           <div className="flex items-center gap-3">
             <NotificationCenter />
           </div>
