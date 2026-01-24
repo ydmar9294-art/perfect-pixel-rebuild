@@ -65,8 +65,10 @@ const DistributorDashboard: React.FC = () => {
     <div className="min-h-screen bg-background pb-24" dir="rtl">
       {/* Professional Header with Dark Gradient */}
       <div className="bg-slate-900 pt-6 pb-10 px-4 relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
+        {/* Modern Oval/Circular Background Pattern */}
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(ellipse 60% 40% at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 70%)', backgroundSize: '80px 60px' }}></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
         
         {/* Header Content */}
         <div className="relative z-10">
