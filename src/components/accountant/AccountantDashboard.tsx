@@ -94,16 +94,24 @@ const AccountantDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir="rtl">
       {/* Header */}
-      <div className="bg-card border-b p-4 md:p-6">
-        <h1 className="text-2xl font-black text-foreground mb-6">لوحة المحاسب المالي</h1>
+      <div className="bg-card border-b p-4 md:p-6 sticky top-0 z-40">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
+            <BarChart3 className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-foreground">لوحة المحاسب المالي</h1>
+            <p className="text-xs text-muted-foreground">إدارة جميع العمليات المالية</p>
+          </div>
+        </div>
         
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <div className="kpi-card">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">إجمالي المبيعات</span>
+          <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-2xl p-4 border border-success/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-bold">إجمالي المبيعات</span>
               <TrendingUp className="w-5 h-5 text-success" />
             </div>
             <p className="text-2xl font-black text-success">
@@ -112,9 +120,9 @@ const AccountantDashboard: React.FC = () => {
             <p className="text-xs text-muted-foreground">ر.س</p>
           </div>
           
-          <div className="kpi-card">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">إجمالي المشتريات</span>
+          <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-4 border border-primary/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-bold">إجمالي المشتريات</span>
               <ShoppingCart className="w-5 h-5 text-primary" />
             </div>
             <p className="text-2xl font-black text-primary">
@@ -123,9 +131,9 @@ const AccountantDashboard: React.FC = () => {
             <p className="text-xs text-muted-foreground">ر.س</p>
           </div>
           
-          <div className="kpi-card">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">إجمالي التحصيلات</span>
+          <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-2xl p-4 border border-success/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-bold">إجمالي التحصيلات</span>
               <Wallet className="w-5 h-5 text-success" />
             </div>
             <p className="text-2xl font-black text-success">
@@ -134,9 +142,9 @@ const AccountantDashboard: React.FC = () => {
             <p className="text-xs text-muted-foreground">ر.س</p>
           </div>
           
-          <div className="kpi-card">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">إجمالي الديون</span>
+          <div className="bg-gradient-to-br from-destructive/10 to-destructive/5 rounded-2xl p-4 border border-destructive/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-bold">إجمالي الديون</span>
               <TrendingDown className="w-5 h-5 text-destructive" />
             </div>
             <p className="text-2xl font-black text-destructive">
@@ -148,7 +156,7 @@ const AccountantDashboard: React.FC = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-card border-b overflow-x-auto no-scrollbar">
+      <div className="bg-card border-b overflow-x-auto no-scrollbar sticky top-[180px] md:top-[200px] z-30">
         <div className="flex p-2 gap-1 min-w-max">
           {tabs.map((tab) => (
             <button
@@ -156,7 +164,7 @@ const AccountantDashboard: React.FC = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-foreground text-background'
+                  ? 'bg-foreground text-background shadow-lg'
                   : 'text-muted-foreground hover:bg-muted'
               }`}
             >
@@ -168,7 +176,7 @@ const AccountantDashboard: React.FC = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="p-4 md:p-6">
+      <div className="p-4 md:p-6 pb-8">
         {renderTabContent()}
       </div>
     </div>

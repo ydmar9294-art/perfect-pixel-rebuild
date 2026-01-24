@@ -8,7 +8,9 @@ import {
   X,
   Check,
   Loader2,
-  Package
+  Package,
+  UserPlus,
+  Phone
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 
@@ -20,14 +22,18 @@ interface CartItem {
 }
 
 const NewSaleTab: React.FC = () => {
-  const { products, customers, createSale, refreshAllData } = useApp();
+  const { products, customers, createSale, refreshAllData, addCustomer, addNotification } = useApp();
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchProduct, setSearchProduct] = useState('');
   const [searchCustomer, setSearchCustomer] = useState('');
   const [showCustomerPicker, setShowCustomerPicker] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [addingCustomer, setAddingCustomer] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const activeProducts = products.filter(p => !p.isDeleted && p.stock > 0);
@@ -98,6 +104,26 @@ const NewSaleTab: React.FC = () => {
       console.error('Error creating sale:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddCustomer = async () => {
+    if (!newCustomerName.trim()) {
+      addNotification('يرجى إدخال اسم العميل', 'warning');
+      return;
+    }
+
+    setAddingCustomer(true);
+    try {
+      await addCustomer(newCustomerName.trim(), newCustomerPhone.trim());
+      setNewCustomerName('');
+      setNewCustomerPhone('');
+      setShowAddCustomerModal(false);
+      // سيتم تحديث قائمة العملاء تلقائياً عبر refreshAllData في addCustomer
+    } catch (error) {
+      console.error('Error adding customer:', error);
+    } finally {
+      setAddingCustomer(false);
     }
   };
 
@@ -244,6 +270,19 @@ const NewSaleTab: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
+            
+            {/* زر إضافة عميل جديد */}
+            <button
+              onClick={() => {
+                setShowCustomerPicker(false);
+                setShowAddCustomerModal(true);
+              }}
+              className="w-full btn-primary py-3 mb-4 flex items-center justify-center gap-2"
+            >
+              <UserPlus className="w-5 h-5" />
+              إضافة عميل جديد
+            </button>
+            
             <div className="relative mb-4">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
@@ -254,23 +293,111 @@ const NewSaleTab: React.FC = () => {
                 className="input-field pr-10"
               />
             </div>
-            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-              {filteredCustomers.map((customer) => (
-                <button
-                  key={customer.id}
-                  onClick={() => {
-                    setSelectedCustomer(customer.id);
-                    setShowCustomerPicker(false);
-                    setSearchCustomer('');
-                  }}
-                  className="w-full text-start p-3 bg-muted rounded-xl hover:bg-muted/80 transition-colors"
-                >
-                  <p className="font-bold text-foreground">{customer.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    الرصيد: {Number(customer.balance).toLocaleString('ar-SA')} ر.س
-                  </p>
-                </button>
-              ))}
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+              {filteredCustomers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>لا يوجد عملاء</p>
+                  <p className="text-xs mt-1">أضف عميل جديد للبدء</p>
+                </div>
+              ) : (
+                filteredCustomers.map((customer) => (
+                  <button
+                    key={customer.id}
+                    onClick={() => {
+                      setSelectedCustomer(customer.id);
+                      setShowCustomerPicker(false);
+                      setSearchCustomer('');
+                    }}
+                    className="w-full text-start p-3 bg-muted rounded-xl hover:bg-muted/80 transition-colors"
+                  >
+                    <p className="font-bold text-foreground">{customer.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      الرصيد: {Number(customer.balance).toLocaleString('ar-SA')} ر.س
+                    </p>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Customer Modal */}
+      {showAddCustomerModal && (
+        <div className="modal-overlay" onClick={() => setShowAddCustomerModal(false)}>
+          <div className="bg-card w-full max-w-md mx-4 rounded-3xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-primary" />
+                إضافة عميل جديد
+              </h3>
+              <button onClick={() => setShowAddCustomerModal(false)} className="p-2">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-bold text-foreground mb-2 block">
+                  اسم العميل <span className="text-destructive">*</span>
+                </label>
+                <div className="relative">
+                  <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="أدخل اسم العميل"
+                    value={newCustomerName}
+                    onChange={(e) => setNewCustomerName(e.target.value)}
+                    className="input-field pr-10"
+                    disabled={addingCustomer}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-bold text-foreground mb-2 block">
+                  رقم الهاتف (اختياري)
+                </label>
+                <div className="relative">
+                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="tel"
+                    placeholder="05xxxxxxxx"
+                    value={newCustomerPhone}
+                    onChange={(e) => setNewCustomerPhone(e.target.value)}
+                    className="input-field pr-10"
+                    disabled={addingCustomer}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={handleAddCustomer}
+                disabled={addingCustomer || !newCustomerName.trim()}
+                className="flex-1 btn-success py-4 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {addingCustomer ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    جارٍ الحفظ...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-5 h-5" />
+                    حفظ العميل
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowAddCustomerModal(false)}
+                disabled={addingCustomer}
+                className="btn-secondary px-6 py-4"
+              >
+                إلغاء
+              </button>
             </div>
           </div>
         </div>

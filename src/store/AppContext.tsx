@@ -376,12 +376,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Auth Init - تحسين: onAuthStateChange أولاً ثم getSession
+  // Auth Init - مع timeout لمنع التحميل اللانهائي
   useEffect(() => {
     checkDeveloperExists();
     
     if (initializingAuth.current) return;
     initializingAuth.current = true;
+
+    // Timeout لمنع التحميل اللانهائي (10 ثواني)
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.warn('[Auth] Timeout reached, stopping loading');
+        setIsLoading(false);
+        initializingAuth.current = false;
+      }
+    }, 10000);
 
     // أولاً: إعداد listener لتغييرات حالة المصادقة
     const { data: listener } = supabase.auth.onAuthStateChange(
@@ -391,7 +400,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (isInternalAuthOp.current) return;
 
         if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
-          await resolveProfile(session.user.id);
+          try {
+            await resolveProfile(session.user.id);
+          } catch (err) {
+            console.error('[Auth] resolveProfile error:', err);
+            setIsLoading(false);
+          }
         }
 
         if (event === 'SIGNED_OUT') {
@@ -424,7 +438,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     init();
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      listener.subscription.unsubscribe();
+    };
   }, [handleError, checkDeveloperExists]);
 
   // Auth Actions
