@@ -57,7 +57,7 @@ interface AppContextType {
   deliveries: Delivery[];
   pendingEmployees: PendingEmployee[];
 
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<boolean>;
   logout: () => Promise<void>;
   signUp: (email: string, pass: string, code: string) => Promise<void>;
   signUpEmployee: (email: string, pass: string, code: string) => Promise<void>;
@@ -282,30 +282,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Profile Resolver
   const resolveProfile = async (uid: string) => {
+    console.log('[Auth] resolveProfile started for:', uid);
+    
     try {
-      setIsLoading(true);
-
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', uid)
         .maybeSingle();
 
-      if (error) throw error;
+      console.log('[Auth] Profile query result:', profile?.role, error?.message);
+
+      if (error) {
+        console.error('[Auth] Profile query error:', error);
+        throw error;
+      }
       
-      // إذا لم يكن هناك profile، قم بتسجيل الخروج بهدوء بدون إظهار خطأ
+      // إذا لم يكن هناك profile، قم بتسجيل الخروج
       if (!profile) {
         console.warn('[Auth] No profile found for user:', uid);
         await supabase.auth.signOut();
-        setIsLoading(false);
         return;
       }
 
+      // Get organization data (may be null for developers)
       const { data: orgUser } = await supabase
         .from('organization_users')
         .select('organization_id, organizations(id, name)')
         .eq('user_id', uid)
         .maybeSingle();
+
+      console.log('[Auth] Org user result:', orgUser);
 
       // Fetch license status for owner/employee
       let licenseStatus: LicenseStatus | null = null;
@@ -323,15 +330,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           expiryDate = license.expiryDate ? new Date(license.expiryDate).getTime() : null;
         }
       } else if ((orgUser as any)?.organizations?.id) {
-        // For employees without license_key, find license by organization
-        const { data: license } = await supabase
-          .from('developer_licenses')
-          .select('status, expiryDate')
-          .eq('status', 'ACTIVE')
-          .limit(1)
-          .maybeSingle();
-        
-        // Try to find license by owner
+        // For employees without license_key, find license by owner
         const { data: ownerLicense } = await supabase
           .from('profiles')
           .select('license_key')
@@ -353,6 +352,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
 
+      // Set user state
       setUser({
         id: profile.id,
         name: profile.full_name,
@@ -375,11 +375,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         setOrganization(null);
       }
+      
+      console.log('[Auth] Profile resolved successfully:', profile.role);
     } catch (err) {
       console.error('[Auth] resolveProfile error:', err);
       await supabase.auth.signOut();
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -389,30 +389,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     if (initializingAuth.current) return;
     initializingAuth.current = true;
+    
+    let isMounted = true;
 
-    // Timeout لمنع التحميل اللانهائي (10 ثواني)
+    // Timeout لمنع التحميل اللانهائي (8 ثواني)
     const timeoutId = setTimeout(() => {
-      if (isLoading) {
+      if (isMounted && isLoading) {
         console.warn('[Auth] Timeout reached, stopping loading');
         setIsLoading(false);
-        initializingAuth.current = false;
       }
-    }, 10000);
+    }, 8000);
 
     // أولاً: إعداد listener لتغييرات حالة المصادقة
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('[Auth] State change:', event, session?.user?.id);
         
-        if (isInternalAuthOp.current) return;
-
-        if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
-          try {
-            await resolveProfile(session.user.id);
-          } catch (err) {
-            console.error('[Auth] resolveProfile error:', err);
-            setIsLoading(false);
-          }
+        // تجاهل الأحداث أثناء عمليات المصادقة الداخلية
+        if (isInternalAuthOp.current) {
+          console.log('[Auth] Ignoring event - internal auth op in progress');
+          return;
         }
 
         if (event === 'SIGNED_OUT') {
@@ -420,51 +416,85 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setRole(null);
           setOrganization(null);
           setIsLoading(false);
+          return;
+        }
+
+        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          // لا تستدعي resolveProfile هنا - سيتم التعامل معها في init
+          // هذا يمنع السباق بين listener و init
+          if (!initializingAuth.current) {
+            setIsLoading(true);
+            await resolveProfile(session.user.id);
+            if (isMounted) setIsLoading(false);
+          }
         }
       }
     );
 
     // ثانياً: التحقق من الجلسة الحالية
     const init = async () => {
+      console.log('[Auth] Init starting...');
       try {
         const { data, error } = await supabase.auth.getSession();
-        console.log('[Auth] Initial session:', data.session?.user?.id, error);
+        console.log('[Auth] Initial session:', data.session?.user?.id, error?.message);
         
         if (data.session?.user) {
           await resolveProfile(data.session.user.id);
-        } else {
-          setIsLoading(false);
         }
       } catch (err) {
         console.error('[Auth] Init error:', err);
-        setIsLoading(false);
       } finally {
-        initializingAuth.current = false;
+        if (isMounted) {
+          setIsLoading(false);
+          initializingAuth.current = false;
+        }
       }
     };
 
     init();
 
     return () => {
+      isMounted = false;
       clearTimeout(timeoutId);
       listener.subscription.unsubscribe();
     };
-  }, [handleError, checkDeveloperExists]);
+  }, [checkDeveloperExists]);
 
   // Auth Actions
-  const login = async (email: string, pass: string) => {
+  const login = async (email: string, pass: string): Promise<boolean> => {
     isInternalAuthOp.current = true;
+    setIsLoading(true);
+    
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('[Auth] Attempting login for:', email);
+      
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: pass
       });
-      if (error) throw error;
       
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.user) {
-        await resolveProfile(data.session.user.id);
+      if (error) {
+        console.error('[Auth] Login error:', error.message);
+        throw error;
       }
+      
+      console.log('[Auth] Login successful, user:', signInData.user?.id);
+      
+      if (signInData.session?.user) {
+        await resolveProfile(signInData.session.user.id);
+        return true;
+      } else {
+        // لم يتم إنشاء جلسة - حالة غير متوقعة
+        console.warn('[Auth] No session created after login');
+        setIsLoading(false);
+        return false;
+      }
+    } catch (err: any) {
+      console.error('[Auth] Login failed:', err);
+      setIsLoading(false);
+      
+      // إعادة رمي الخطأ ليتم التعامل معه في الواجهة
+      throw err;
     } finally {
       isInternalAuthOp.current = false;
     }
@@ -576,7 +606,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const loginDeveloper = async (email: string, pass: string): Promise<boolean> => {
     isInternalAuthOp.current = true;
+    setIsLoading(true);
+    
     try {
+      console.log('[Auth] loginDeveloper started for:', email);
+      
       // Check if developer exists in our tables
       const devCheck = await supabase.from('user_roles').select('id').eq('role', 'DEVELOPER').limit(1);
       const devExists = (devCheck.data?.length || 0) > 0;
@@ -699,6 +733,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       handleError(err);
       return false;
     } finally {
+      setIsLoading(false);
       isInternalAuthOp.current = false;
     }
   };
