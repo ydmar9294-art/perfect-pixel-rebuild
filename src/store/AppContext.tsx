@@ -292,7 +292,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         .maybeSingle();
 
       if (error) throw error;
-      if (!profile) throw new Error('PROFILE_NOT_READY');
+      
+      // إذا لم يكن هناك profile، قم بتسجيل الخروج بهدوء بدون إظهار خطأ
+      if (!profile) {
+        console.warn('[Auth] No profile found for user:', uid);
+        await supabase.auth.signOut();
+        setIsLoading(false);
+        return;
+      }
 
       const { data: orgUser } = await supabase
         .from('organization_users')
@@ -369,7 +376,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setOrganization(null);
       }
     } catch (err) {
-      handleError(err);
+      console.error('[Auth] resolveProfile error:', err);
       await supabase.auth.signOut();
     } finally {
       setIsLoading(false);
@@ -643,7 +650,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return true;
         }
       } else {
-        // Developer already exists - try to login (only one developer allowed)
+        // Developer already exists - try to login
         const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password: pass
@@ -664,9 +671,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             .limit(1);
           
           if (!roles || roles.length === 0) {
-            // User is not a developer - logout and show error
+            // User is not a developer - check if profile exists
+            const { data: existingProfile } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', loginData.user.id)
+              .maybeSingle();
+            
+            // إذا لم يكن له profile ولا role، يعني هذا حساب قديم غير مربوط
+            // نقوم بتسجيل الخروج وإظهار رسالة مناسبة
             await supabase.auth.signOut();
-            addNotification('يوجد مطور مسجل بالفعل. لا يمكن إضافة مطور آخر.', 'error');
+            
+            if (!existingProfile) {
+              addNotification('هذا الحساب غير مربوط بالنظام. يرجى استخدام كود التفعيل.', 'error');
+            } else {
+              addNotification('يوجد مطور مسجل بالفعل. لا يمكن إضافة مطور آخر.', 'error');
+            }
             return false;
           }
           
