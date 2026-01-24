@@ -29,12 +29,11 @@ import UnifiedActivation from '@/components/auth/UnifiedActivation';
 // LOGIN VIEW
 // ==========================================
 const LoginView: React.FC = () => {
-  const { login, signUp, signUpEmployee, loginDeveloper, isLoading, addNotification, developerExists } = useApp();
-  const [mode, setMode] = useState<'login' | 'signup' | 'employee'>('login');
+  const { login, loginDeveloper, isLoading, addNotification, developerExists } = useApp();
+  const [mode, setMode] = useState<'login' | 'activate'>('login');
   const [isDeveloperMode, setIsDeveloperMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [activationCode, setActivationCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [localLoading, setLocalLoading] = useState(false);
 
@@ -55,21 +54,7 @@ const LoginView: React.FC = () => {
           addNotification("يجب تسجيل دخول المطور أولاً", "error");
           return;
         }
-        if (mode === 'signup') {
-          if (!activationCode.trim()) {
-            addNotification("كود تفعيل المنشأة مطلوب", "error");
-            return;
-          }
-          await signUp(email.trim(), password.trim(), activationCode.trim().toUpperCase());
-        } else if (mode === 'employee') {
-          if (!activationCode.trim()) {
-            addNotification("كود تفعيل الموظف مطلوب", "error");
-            return;
-          }
-          await signUpEmployee(email.trim(), password.trim(), activationCode.trim().toUpperCase());
-        } else {
-          await login(email.trim(), password.trim());
-        }
+        await login(email.trim(), password.trim());
       }
     } catch (err: any) {
       addNotification(err.message || "فشلت عملية الدخول", "error");
@@ -117,65 +102,60 @@ const LoginView: React.FC = () => {
           <div className="flex bg-muted p-1 m-4 rounded-2xl border">
             {!isDeveloperMode ? (
               <>
-                <button onClick={() => { setMode('login'); setActivationCode(''); }} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mode === 'login' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>دخول</button>
-                <button onClick={() => { setMode('signup'); setActivationCode(''); }} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mode === 'signup' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>تفعيل منشأة</button>
-                <button onClick={() => { setMode('employee'); setActivationCode(''); }} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mode === 'employee' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>تفعيل موظف</button>
+                <button 
+                  onClick={() => setMode('login')} 
+                  className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mode === 'login' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                >
+                  تسجيل الدخول
+                </button>
+                <button 
+                  onClick={() => setMode('activate')} 
+                  className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mode === 'activate' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                >
+                  تفعيل حساب جديد
+                </button>
               </>
             ) : (
               <div className="w-full text-center py-3.5 font-black text-foreground text-sm">واجهة التطوير التقني</div>
             )}
           </div>
           
-          <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
-            <input 
-              type="email" 
-              placeholder="البريد الإلكتروني" 
-              value={email} 
-              disabled={localLoading}
-              className="input-field" 
-              onChange={e => setEmail(e.target.value)} 
-            />
-            <div className="relative">
+          {mode === 'login' || isDeveloperMode ? (
+            <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
               <input 
-                type={showPassword ? "text" : "password"} 
-                placeholder="كلمة المرور" 
-                value={password} 
+                type="email" 
+                placeholder="البريد الإلكتروني" 
+                value={email} 
                 disabled={localLoading}
                 className="input-field" 
-                onChange={e => setPassword(e.target.value)} 
+                onChange={e => setEmail(e.target.value)} 
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="كلمة المرور" 
+                  value={password} 
+                  disabled={localLoading}
+                  className="input-field" 
+                  onChange={e => setPassword(e.target.value)} 
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              <button 
+                type="submit" 
+                disabled={localLoading || isLoading} 
+                className="w-full py-5 bg-foreground text-background rounded-2xl font-black text-lg flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+              >
+                {(localLoading || isLoading) ? <Loader2 size={24} className="animate-spin" /> : 'دخول النظام'}
               </button>
+            </form>
+          ) : (
+            <div className="px-6 pb-6">
+              <UnifiedActivation />
             </div>
-            {mode === 'signup' && !isDeveloperMode && (
-              <input 
-                type="text" 
-                placeholder="كود تفعيل المنشأة" 
-                value={activationCode} 
-                disabled={localLoading}
-                className="w-full bg-primary/10 border-2 border-primary/20 rounded-2xl px-6 py-4 font-black text-primary outline-none uppercase" 
-                onChange={e => setActivationCode(e.target.value)} 
-              />
-            )}
-            {mode === 'employee' && !isDeveloperMode && (
-              <input 
-                type="text" 
-                placeholder="كود تفعيل الموظف (EMP-XXXX-XXXX)" 
-                value={activationCode} 
-                disabled={localLoading}
-                className="w-full bg-success/10 border-2 border-success/20 rounded-2xl px-6 py-4 font-black text-success outline-none uppercase" 
-                onChange={e => setActivationCode(e.target.value)} 
-              />
-            )}
-            <button 
-              type="submit" 
-              disabled={localLoading || isLoading} 
-              className="w-full py-5 bg-foreground text-background rounded-2xl font-black text-lg flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
-            >
-              {(localLoading || isLoading) ? <Loader2 size={24} className="animate-spin" /> : mode === 'login' ? 'دخول النظام' : 'تفعيل الحساب'}
-            </button>
-          </form>
+          )}
           
           {/* Forgot Password Link */}
           {mode === 'login' && !isDeveloperMode && (

@@ -83,6 +83,7 @@ interface AppContextType {
   makeLicensePermanent: (id: string, ownerId: string | null) => Promise<void>;
   addPurchase: (productId: string, quantity: number, unitPrice: number, supplierName?: string, notes?: string) => Promise<void>;
   createDelivery: (distributorName: string, items: any[], notes?: string) => Promise<void>;
+  createPurchaseReturn: (items: { product_id: string; product_name: string; quantity: number; unit_price: number }[], reason?: string, supplierName?: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -375,33 +376,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Auth Init
+  // Auth Init - تحسين: onAuthStateChange أولاً ثم getSession
   useEffect(() => {
     checkDeveloperExists();
+    
+    if (initializingAuth.current) return;
+    initializingAuth.current = true;
 
-    const init = async () => {
-      if (initializingAuth.current) return;
-      initializingAuth.current = true;
-
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.user) {
-          await resolveProfile(data.session.user.id);
-        } else {
-          setIsLoading(false);
-        }
-      } finally {
-        initializingAuth.current = false;
-      }
-    };
-
-    init();
-
+    // أولاً: إعداد listener لتغييرات حالة المصادقة
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (isInternalAuthOp.current || initializingAuth.current) return;
+        console.log('[Auth] State change:', event, session?.user?.id);
+        
+        if (isInternalAuthOp.current) return;
 
-        if (session?.user && event === 'SIGNED_IN') {
+        if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
           await resolveProfile(session.user.id);
         }
 
@@ -413,6 +402,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
     );
+
+    // ثانياً: التحقق من الجلسة الحالية
+    const init = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        console.log('[Auth] Initial session:', data.session?.user?.id, error);
+        
+        if (data.session?.user) {
+          await resolveProfile(data.session.user.id);
+        } else {
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('[Auth] Init error:', err);
+        setIsLoading(false);
+      } finally {
+        initializingAuth.current = false;
+      }
+    };
+
+    init();
 
     return () => listener.subscription.unsubscribe();
   }, [handleError, checkDeveloperExists]);
@@ -887,6 +897,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             });
             await refreshAllData();
             addNotification('تم تسليم البضاعة وخصمها من المخزون', 'success');
+          } catch (e) { handleError(e); }
+        },
+
+        createPurchaseReturn: async (items, reason, supplierName) => {
+          try {
+            const formattedItems = items.map(item => ({
+              product_id: item.product_id,
+              product_name: item.product_name,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              total_price: item.quantity * item.unit_price
+            }));
+            
+            await supabase.rpc('create_purchase_return_rpc', {
+              p_items: formattedItems,
+              p_reason: reason,
+              p_supplier_name: supplierName
+            });
+            await refreshAllData();
+            addNotification('تم تسجيل مرتجع الشراء وخصم المخزون', 'success');
           } catch (e) { handleError(e); }
         }
       }}
