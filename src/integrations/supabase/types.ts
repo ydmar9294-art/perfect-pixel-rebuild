@@ -398,6 +398,80 @@ export type Database = {
           },
         ]
       }
+      purchase_return_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          return_id: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+          return_id: string
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          return_id?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_return_items_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_returns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          purchase_id: string | null
+          reason: string | null
+          supplier_name: string | null
+          total_amount: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          purchase_id?: string | null
+          reason?: string | null
+          supplier_name?: string | null
+          total_amount?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          purchase_id?: string | null
+          reason?: string | null
+          supplier_name?: string | null
+          total_amount?: number
+        }
+        Relationships: []
+      }
       purchases: {
         Row: {
           created_at: string
@@ -562,6 +636,83 @@ export type Database = {
           },
         ]
       }
+      sales_return_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          return_id: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+          return_id: string
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          return_id?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_return_items_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "sales_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_returns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          customer_name: string
+          id: string
+          organization_id: string
+          reason: string | null
+          sale_id: string
+          total_amount: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          customer_name: string
+          id?: string
+          organization_id: string
+          reason?: string | null
+          sale_id: string
+          total_amount?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          customer_name?: string
+          id?: string
+          organization_id?: string
+          reason?: string | null
+          sale_id?: string
+          total_amount?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -717,8 +868,16 @@ export type Database = {
         Args: { p_distributor_name: string; p_items: Json; p_notes?: string }
         Returns: string
       }
+      create_purchase_return_rpc: {
+        Args: { p_items: Json; p_reason?: string; p_supplier_name?: string }
+        Returns: string
+      }
       create_sale_rpc: {
         Args: { p_customer_id: string; p_items: Json }
+        Returns: string
+      }
+      create_sales_return_rpc: {
+        Args: { p_items: Json; p_reason?: string; p_sale_id: string }
         Returns: string
       }
       developer_exists: { Args: never; Returns: boolean }
