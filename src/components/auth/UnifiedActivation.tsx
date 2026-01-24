@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Building2, User, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Key, Building2, User, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 
 interface UnifiedActivationProps {
-  onSuccess: () => void;
+  onSuccess?: () => void;
+  onBack?: () => void;
 }
 
-const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess }) => {
-  const { signUp } = useApp();
+const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess, onBack }) => {
+  const { signUp, signUpEmployee, addNotification } = useApp();
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [codeType, setCodeType] = useState<'unknown' | 'org' | 'employee'>('unknown');
@@ -21,7 +22,7 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess }) => {
     const trimmedCode = code.trim().toUpperCase();
     if (trimmedCode.startsWith('EMP-')) {
       setCodeType('employee');
-    } else if (trimmedCode.length >= 9 && trimmedCode.includes('-')) {
+    } else if (trimmedCode.length >= 4 && !trimmedCode.startsWith('EMP-')) {
       setCodeType('org');
     } else {
       setCodeType('unknown');
@@ -51,16 +52,22 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess }) => {
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError('كلمتا المرور غير متطابقتين');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      await signUp(email, password, code.trim().toUpperCase());
-      onSuccess();
+      const trimmedCode = code.trim().toUpperCase();
+      
+      // تحديد نوع التفعيل تلقائياً بناءً على الكود
+      if (trimmedCode.startsWith('EMP-')) {
+        // كود موظف
+        await signUpEmployee(email.trim(), password, trimmedCode);
+      } else {
+        // كود منشأة
+        await signUp(email.trim(), password, trimmedCode);
+      }
+      
+      addNotification('تم تفعيل الحساب بنجاح!', 'success');
+      onSuccess?.();
     } catch (err: any) {
       setError(err.message || 'فشل في التفعيل');
     } finally {
@@ -76,7 +83,8 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess }) => {
           label: 'كود منشأة',
           description: 'سيتم تفعيلك كمالك للمنشأة',
           color: 'text-primary',
-          bgColor: 'bg-primary/10'
+          bgColor: 'bg-primary/10',
+          borderColor: 'border-primary/20'
         };
       case 'employee':
         return {
@@ -84,7 +92,8 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess }) => {
           label: 'كود موظف',
           description: 'سيتم تفعيلك كموظف في المنشأة',
           color: 'text-success',
-          bgColor: 'bg-success/10'
+          bgColor: 'bg-success/10',
+          borderColor: 'border-success/20'
         };
       default:
         return {
@@ -92,7 +101,8 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess }) => {
           label: 'كود التفعيل',
           description: 'أدخل الكود للمتابعة',
           color: 'text-muted-foreground',
-          bgColor: 'bg-muted'
+          bgColor: 'bg-muted',
+          borderColor: 'border-border'
         };
     }
   };
@@ -101,121 +111,102 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess }) => {
   const TypeIcon = typeInfo.icon;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-4">
-            <Key className="w-10 h-10 text-primary" />
-          </div>
-          <h1 className="text-2xl font-black text-foreground mb-2">
-            تفعيل الحساب للمرة الأولى
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            أدخل كود التفعيل الذي استلمته لإنشاء حسابك
-          </p>
+    <div className="space-y-5">
+      {/* Activation Code */}
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-foreground">كود التفعيل</label>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="أدخل كود المنشأة أو الموظف"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            disabled={loading}
+            className={`input-field text-center tracking-widest font-mono text-lg ${typeInfo.bgColor} border-2 ${typeInfo.borderColor}`}
+            dir="ltr"
+          />
         </div>
-
-        {/* Form Card */}
-        <div className="card-elevated p-6 space-y-5">
-          {/* Activation Code */}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-foreground">كود التفعيل</label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="XXXX-XXXX أو EMP-XXXX-XXXX"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className="input-field text-center tracking-widest font-mono text-lg"
-                dir="ltr"
-              />
+        
+        {/* Code Type Indicator */}
+        {code.length > 0 && (
+          <div className={`flex items-center gap-2 p-3 rounded-xl ${typeInfo.bgColor} mt-2`}>
+            <TypeIcon className={`w-5 h-5 ${typeInfo.color}`} />
+            <div>
+              <p className={`text-sm font-bold ${typeInfo.color}`}>{typeInfo.label}</p>
+              <p className="text-xs text-muted-foreground">{typeInfo.description}</p>
             </div>
-            
-            {/* Code Type Indicator */}
-            {code.length > 0 && (
-              <div className={`flex items-center gap-2 p-3 rounded-xl ${typeInfo.bgColor} mt-2`}>
-                <TypeIcon className={`w-5 h-5 ${typeInfo.color}`} />
-                <div>
-                  <p className={`text-sm font-bold ${typeInfo.color}`}>{typeInfo.label}</p>
-                  <p className="text-xs text-muted-foreground">{typeInfo.description}</p>
-                </div>
-              </div>
-            )}
           </div>
+        )}
+      </div>
 
-          {/* Email */}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-foreground">البريد الإلكتروني</label>
-            <input
-              type="email"
-              placeholder="example@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input-field"
-              dir="ltr"
-            />
-          </div>
+      {/* Email */}
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-foreground">البريد الإلكتروني</label>
+        <input
+          type="email"
+          placeholder="example@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
+          className="input-field"
+          dir="ltr"
+        />
+      </div>
 
-          {/* Password */}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-foreground">كلمة المرور</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input-field"
-              dir="ltr"
-            />
-          </div>
-
-          {/* Confirm Password */}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-foreground">تأكيد كلمة المرور</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="input-field"
-              dir="ltr"
-            />
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-xl">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <p className="text-sm font-bold">{error}</p>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <button
-            onClick={handleActivation}
-            disabled={loading || !code || !email || !password}
-            className="btn-primary w-full py-4 text-lg flex items-center justify-center gap-2 disabled:opacity-50"
+      {/* Password */}
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-foreground">كلمة المرور</label>
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+            className="input-field"
+            dir="ltr"
+          />
+          <button 
+            type="button" 
+            onClick={() => setShowPassword(!showPassword)} 
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
           >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                جارٍ التفعيل...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-5 h-5" />
-                تفعيل الحساب
-              </>
-            )}
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
-
-        {/* Help Text */}
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          إذا لم يكن لديك كود تفعيل، تواصل مع مدير النظام
-        </p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-xl">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <p className="text-sm font-bold">{error}</p>
+        </div>
+      )}
+
+      {/* Submit Button */}
+      <button
+        onClick={handleActivation}
+        disabled={loading || !code || !email || !password}
+        className="w-full py-5 bg-foreground text-background rounded-2xl font-black text-lg flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            جارٍ التفعيل...
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="w-5 h-5" />
+            تفعيل الحساب
+          </>
+        )}
+      </button>
+
+      {/* Help Text */}
+      <p className="text-center text-xs text-muted-foreground">
+        أدخل كود المنشأة (مثال: XXXX-XXXX) أو كود الموظف (مثال: EMP-XXXX-XXXX)
+      </p>
     </div>
   );
 };

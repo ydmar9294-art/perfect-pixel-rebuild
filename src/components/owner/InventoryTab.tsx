@@ -3,7 +3,7 @@ import { useApp } from '@/store/AppContext';
 import { CURRENCY } from '@/constants';
 import { 
   Package, Box, ShoppingCart, Truck, Plus, X, Calendar, User, 
-  Check, Trash2, Search, Settings2, AlertTriangle
+  Check, Trash2, Search, Settings2, AlertTriangle, RotateCcw
 } from 'lucide-react';
 import { EmployeeType, Product } from '@/types';
 
@@ -13,12 +13,20 @@ interface DeliveryItem {
   quantity: number;
 }
 
-type SubTab = 'products' | 'purchases' | 'deliveries';
+interface PurchaseReturnItem {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+}
+
+type SubTab = 'products' | 'purchases' | 'purchase-returns' | 'deliveries';
 
 export const InventoryTab: React.FC = () => {
   const { 
     products, users, purchases = [], deliveries = [], 
-    addPurchase, createDelivery, addProduct, updateProduct, deleteProduct 
+    addPurchase, createDelivery, addProduct, updateProduct, deleteProduct,
+    createPurchaseReturn
   } = useApp();
   const [subTab, setSubTab] = useState<SubTab>('products');
 
@@ -29,6 +37,15 @@ export const InventoryTab: React.FC = () => {
   const [purchasePrice, setPurchasePrice] = useState(0);
   const [purchaseSupplier, setPurchaseSupplier] = useState('');
   const [purchaseNotes, setPurchaseNotes] = useState('');
+
+  // Purchase Return Modal State
+  const [showPurchaseReturnModal, setShowPurchaseReturnModal] = useState(false);
+  const [purchaseReturnItems, setPurchaseReturnItems] = useState<PurchaseReturnItem[]>([]);
+  const [purchaseReturnReason, setPurchaseReturnReason] = useState('');
+  const [purchaseReturnSupplier, setPurchaseReturnSupplier] = useState('');
+  const [selectedReturnProduct, setSelectedReturnProduct] = useState('');
+  const [returnItemQty, setReturnItemQty] = useState(1);
+  const [returnItemPrice, setReturnItemPrice] = useState(0);
 
   // Delivery Modal State
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
@@ -117,6 +134,62 @@ export const InventoryTab: React.FC = () => {
     setDeliveryItemQty(1);
   };
 
+  // Purchase Return Handlers
+  const handleReturnProductChange = (productId: string) => {
+    setSelectedReturnProduct(productId);
+    const product = products.find(p => p.id === productId);
+    if (product) setReturnItemPrice(product.costPrice);
+  };
+
+  const addPurchaseReturnItem = () => {
+    if (!selectedReturnProduct || returnItemQty <= 0) return;
+    const product = products.find(p => p.id === selectedReturnProduct);
+    if (!product) return;
+
+    // Check stock availability
+    if (returnItemQty > product.stock) return;
+
+    const existingItem = purchaseReturnItems.find(i => i.product_id === selectedReturnProduct);
+    if (existingItem) {
+      setPurchaseReturnItems(purchaseReturnItems.map(i => 
+        i.product_id === selectedReturnProduct 
+          ? { ...i, quantity: i.quantity + returnItemQty }
+          : i
+      ));
+    } else {
+      setPurchaseReturnItems([...purchaseReturnItems, {
+        product_id: product.id,
+        product_name: product.name,
+        quantity: returnItemQty,
+        unit_price: returnItemPrice
+      }]);
+    }
+    setSelectedReturnProduct('');
+    setReturnItemQty(1);
+    setReturnItemPrice(0);
+  };
+
+  const removePurchaseReturnItem = (productId: string) => {
+    setPurchaseReturnItems(purchaseReturnItems.filter(i => i.product_id !== productId));
+  };
+
+  const handlePurchaseReturnSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (purchaseReturnItems.length === 0) return;
+    await createPurchaseReturn(purchaseReturnItems, purchaseReturnReason || undefined, purchaseReturnSupplier || undefined);
+    setShowPurchaseReturnModal(false);
+    resetPurchaseReturnForm();
+  };
+
+  const resetPurchaseReturnForm = () => {
+    setPurchaseReturnItems([]);
+    setPurchaseReturnReason('');
+    setPurchaseReturnSupplier('');
+    setSelectedReturnProduct('');
+    setReturnItemQty(1);
+    setReturnItemPrice(0);
+  };
+
   // Product Handlers
   const handleOpenProductModal = (p: Product | null = null) => {
     setEditingProduct(p);
@@ -146,27 +219,35 @@ export const InventoryTab: React.FC = () => {
     setEditingProduct(null);
   };
 
+  const purchaseReturnTotal = purchaseReturnItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Sub-tabs */}
-      <div className="grid grid-cols-3 gap-2 bg-muted p-1.5 rounded-2xl">
+      <div className="grid grid-cols-4 gap-1 bg-muted p-1.5 rounded-2xl">
         <button 
           onClick={() => setSubTab('products')} 
-          className={`py-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all ${subTab === 'products' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'}`}
+          className={`py-2.5 rounded-xl font-black text-[10px] flex items-center justify-center gap-1 transition-all ${subTab === 'products' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'}`}
         >
-          <Package size={14} /> المواد
+          <Package size={12} /> المواد
         </button>
         <button 
           onClick={() => setSubTab('purchases')} 
-          className={`py-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all ${subTab === 'purchases' ? 'bg-card shadow-sm text-success' : 'text-muted-foreground'}`}
+          className={`py-2.5 rounded-xl font-black text-[10px] flex items-center justify-center gap-1 transition-all ${subTab === 'purchases' ? 'bg-card shadow-sm text-success' : 'text-muted-foreground'}`}
         >
-          <ShoppingCart size={14} /> شراء
+          <ShoppingCart size={12} /> شراء
+        </button>
+        <button 
+          onClick={() => setSubTab('purchase-returns')} 
+          className={`py-2.5 rounded-xl font-black text-[10px] flex items-center justify-center gap-1 transition-all ${subTab === 'purchase-returns' ? 'bg-card shadow-sm text-destructive' : 'text-muted-foreground'}`}
+        >
+          <RotateCcw size={12} /> مرتجع
         </button>
         <button 
           onClick={() => setSubTab('deliveries')} 
-          className={`py-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all ${subTab === 'deliveries' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground'}`}
+          className={`py-2.5 rounded-xl font-black text-[10px] flex items-center justify-center gap-1 transition-all ${subTab === 'deliveries' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground'}`}
         >
-          <Truck size={14} /> تسليم
+          <Truck size={12} /> تسليم
         </button>
       </div>
 
@@ -267,7 +348,25 @@ export const InventoryTab: React.FC = () => {
         </div>
       )}
 
-      {/* Deliveries Sub-Tab */}
+      {/* Purchase Returns Sub-Tab */}
+      {subTab === 'purchase-returns' && (
+        <div className="space-y-3">
+          <button 
+            onClick={() => setShowPurchaseReturnModal(true)} 
+            className="w-full py-4 bg-destructive text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+          >
+            <RotateCcw size={18}/> تسجيل مرتجع شراء
+          </button>
+
+          <div className="bg-destructive/10 p-4 rounded-2xl border border-destructive/20">
+            <p className="text-xs text-destructive font-bold mb-2">⚠️ تنبيه هام</p>
+            <p className="text-xs text-muted-foreground">
+              مرتجع الشراء يؤدي إلى خصم الكمية من المخزون. تأكد من توفر الكمية قبل التسجيل.
+            </p>
+          </div>
+        </div>
+      )}
+
       {subTab === 'deliveries' && (
         <div className="space-y-3">
           <button 
@@ -410,6 +509,121 @@ export const InventoryTab: React.FC = () => {
               <button type="submit" disabled={deliveryItems.length === 0} className="w-full bg-primary text-primary-foreground font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50">
                 <Check size={18} className="inline ml-2" />
                 تأكيد التسليم
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Purchase Return Modal */}
+      {showPurchaseReturnModal && (
+        <div className="modal-overlay p-4">
+          <div className="bg-card rounded-[2.5rem] w-full max-w-md shadow-2xl animate-zoom-in overflow-hidden max-h-[85vh] overflow-y-auto">
+            <div className="p-5 bg-destructive text-white flex justify-between items-center sticky top-0 z-10">
+              <h2 className="text-lg font-black flex items-center gap-2">
+                <RotateCcw size={20} /> مرتجع شراء
+              </h2>
+              <button onClick={() => { setShowPurchaseReturnModal(false); resetPurchaseReturnForm(); }} className="text-white/50 p-1">
+                <X size={22} />
+              </button>
+            </div>
+            <form onSubmit={handlePurchaseReturnSubmit} className="p-5 space-y-4 text-end">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">المورد</label>
+                <input 
+                  type="text" 
+                  value={purchaseReturnSupplier} 
+                  onChange={(e) => setPurchaseReturnSupplier(e.target.value)} 
+                  placeholder="اسم المورد (اختياري)" 
+                  className="input-field" 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">إضافة أصناف للمرتجع</label>
+                <div className="flex gap-2">
+                  <select 
+                    value={selectedReturnProduct} 
+                    onChange={(e) => handleReturnProductChange(e.target.value)} 
+                    className="input-field flex-1"
+                  >
+                    <option value="">اختر المنتج...</option>
+                    {products.filter(p => p.stock > 0).map(p => (
+                      <option key={p.id} value={p.id}>{p.name} (متوفر: {p.stock})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input 
+                    type="number" 
+                    min="1" 
+                    value={returnItemQty} 
+                    onChange={(e) => setReturnItemQty(Number(e.target.value))} 
+                    placeholder="الكمية"
+                    className="input-field text-center" 
+                  />
+                  <input 
+                    type="number" 
+                    min="0" 
+                    step="0.01"
+                    value={returnItemPrice} 
+                    onChange={(e) => setReturnItemPrice(Number(e.target.value))} 
+                    placeholder="سعر الوحدة"
+                    className="input-field text-center" 
+                  />
+                </div>
+                <button 
+                  type="button" 
+                  onClick={addPurchaseReturnItem} 
+                  disabled={!selectedReturnProduct || returnItemQty <= 0}
+                  className="w-full py-2 bg-destructive/10 text-destructive rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Plus size={16} /> إضافة للمرتجع
+                </button>
+              </div>
+
+              {purchaseReturnItems.length > 0 && (
+                <div className="space-y-2 bg-muted p-3 rounded-xl">
+                  <p className="text-xs font-bold text-muted-foreground">أصناف المرتجع:</p>
+                  {purchaseReturnItems.map((item) => (
+                    <div key={item.product_id} className="flex justify-between items-center bg-card p-2 rounded-lg">
+                      <span className="font-bold text-xs">{item.product_name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-destructive/10 text-destructive px-2 py-0.5 rounded font-black text-xs">
+                          {item.quantity} × {item.unit_price}
+                        </span>
+                        <button type="button" onClick={() => removePurchaseReturnItem(item.product_id)} className="text-destructive p-1">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">سبب المرتجع</label>
+                <input 
+                  type="text" 
+                  value={purchaseReturnReason} 
+                  onChange={(e) => setPurchaseReturnReason(e.target.value)} 
+                  placeholder="سبب المرتجع (اختياري)" 
+                  className="input-field" 
+                />
+              </div>
+
+              <div className="bg-destructive/10 p-3 rounded-xl border border-destructive/20 flex justify-between items-center">
+                <span className="font-bold text-muted-foreground text-sm">إجمالي المرتجع:</span>
+                <span className="text-xl font-black text-destructive">{purchaseReturnTotal.toLocaleString()} {CURRENCY}</span>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={purchaseReturnItems.length === 0} 
+                className="w-full bg-destructive text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Check size={18} className="inline ml-2" />
+                تأكيد المرتجع
               </button>
             </form>
           </div>
