@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { CURRENCY } from '@/constants';
-import { Truck, Plus, X, Package, Calendar, User, Minus, Check, Trash2 } from 'lucide-react';
+import { Truck, Plus, X, Package, Calendar, User, Check, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { EmployeeType } from '@/types';
 
 interface DeliveryItem {
@@ -20,31 +20,42 @@ interface Delivery {
 }
 
 export const DeliveriesTab: React.FC = () => {
-  const { products, users, createDelivery, deliveries = [] } = useApp();
+  const { products, users, createDelivery, deliveries = [], addNotification } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [distributorName, setDistributorName] = useState('');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<DeliveryItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [itemQuantity, setItemQuantity] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // الموزعين فقط
   const distributors = users.filter(u => u.employeeType === EmployeeType.FIELD_AGENT);
 
   const addItem = () => {
-    if (!selectedProduct || itemQuantity <= 0) return;
+    if (!selectedProduct || itemQuantity <= 0) {
+      setError('يرجى اختيار منتج وإدخال كمية صحيحة');
+      return;
+    }
     
     const product = products.find(p => p.id === selectedProduct);
-    if (!product) return;
+    if (!product) {
+      setError('المنتج غير موجود');
+      return;
+    }
 
     // التحقق من المخزون
     const existingItem = items.find(i => i.product_id === selectedProduct);
     const totalQty = (existingItem?.quantity || 0) + itemQuantity;
     
     if (totalQty > product.stock) {
+      setError(`الكمية المطلوبة (${totalQty}) أكبر من المخزون المتوفر (${product.stock})`);
       return;
     }
 
+    setError('');
+    
     if (existingItem) {
       setItems(items.map(i => 
         i.product_id === selectedProduct 
@@ -69,11 +80,31 @@ export const DeliveriesTab: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!distributorName || items.length === 0) return;
     
-    await createDelivery(distributorName, items, notes || undefined);
-    setShowModal(false);
-    resetForm();
+    if (!distributorName.trim()) {
+      setError('يرجى إدخال اسم الموزع');
+      return;
+    }
+    
+    if (items.length === 0) {
+      setError('يرجى إضافة منتج واحد على الأقل');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      await createDelivery(distributorName.trim(), items, notes || undefined);
+      setShowModal(false);
+      resetForm();
+      addNotification('تم تسليم البضاعة بنجاح', 'success');
+    } catch (err: any) {
+      console.error('Delivery error:', err);
+      setError(err.message || 'حدث خطأ أثناء تسليم البضاعة');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -82,7 +113,10 @@ export const DeliveriesTab: React.FC = () => {
     setItems([]);
     setSelectedProduct('');
     setItemQuantity(1);
+    setError('');
   };
+
+  const availableProducts = products.filter(p => !p.isDeleted && p.stock > 0);
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -134,19 +168,28 @@ export const DeliveriesTab: React.FC = () => {
               <h2 className="text-xl font-black flex items-center gap-2">
                 <Truck size={24} /> تسليم بضاعة للموزع
               </h2>
-              <button onClick={() => { setShowModal(false); resetForm(); }} className="text-primary-foreground/40 p-2">
+              <button onClick={() => { setShowModal(false); resetForm(); }} className="text-primary-foreground/40 p-2 hover:text-primary-foreground">
                 <X size={24} />
               </button>
             </div>
+            
             <form onSubmit={handleSubmit} className="p-6 space-y-5 text-end">
+              {/* Error Message */}
+              {error && (
+                <div className="bg-destructive/10 text-destructive p-4 rounded-2xl flex items-center gap-2 text-start">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-bold text-sm">{error}</span>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mr-2">الموزع</label>
                 {distributors.length > 0 ? (
                   <select 
                     value={distributorName} 
                     onChange={(e) => setDistributorName(e.target.value)}
-                    required
                     className="input-field"
+                    disabled={loading}
                   >
                     <option value="">اختر الموزع...</option>
                     {distributors.map(d => (
@@ -158,9 +201,9 @@ export const DeliveriesTab: React.FC = () => {
                     type="text"
                     value={distributorName}
                     onChange={(e) => setDistributorName(e.target.value)}
-                    required
                     placeholder="اسم الموزع"
-                    className="input-field" 
+                    className="input-field"
+                    disabled={loading}
                   />
                 )}
               </div>
@@ -173,10 +216,11 @@ export const DeliveriesTab: React.FC = () => {
                     value={selectedProduct} 
                     onChange={(e) => setSelectedProduct(e.target.value)}
                     className="input-field flex-1"
+                    disabled={loading}
                   >
                     <option value="">اختر المادة...</option>
-                    {products.filter(p => p.stock > 0).map(p => (
-                      <option key={p.id} value={p.id}>{p.name} ({p.stock})</option>
+                    {availableProducts.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} (المتوفر: {p.stock})</option>
                     ))}
                   </select>
                   <input 
@@ -185,11 +229,13 @@ export const DeliveriesTab: React.FC = () => {
                     value={itemQuantity}
                     onChange={(e) => setItemQuantity(Number(e.target.value))}
                     className="input-field w-20 text-center"
+                    disabled={loading}
                   />
                   <button 
                     type="button"
                     onClick={addItem}
-                    className="px-4 bg-primary text-primary-foreground rounded-xl"
+                    disabled={loading || !selectedProduct}
+                    className="px-4 bg-primary text-primary-foreground rounded-xl disabled:opacity-50"
                   >
                     <Plus size={20} />
                   </button>
@@ -211,7 +257,8 @@ export const DeliveriesTab: React.FC = () => {
                         <button 
                           type="button"
                           onClick={() => removeItem(item.product_id)}
-                          className="text-destructive p-1"
+                          disabled={loading}
+                          className="text-destructive p-1 disabled:opacity-50"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -227,17 +274,27 @@ export const DeliveriesTab: React.FC = () => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="أي ملاحظات إضافية..."
-                  className="input-field min-h-[80px] resize-none" 
+                  className="input-field min-h-[80px] resize-none"
+                  disabled={loading}
                 />
               </div>
 
               <button 
                 type="submit" 
-                disabled={items.length === 0}
-                className="w-full bg-primary text-primary-foreground font-black py-5 rounded-[1.8rem] shadow-xl active:scale-95 transition-all disabled:opacity-50"
+                disabled={loading || items.length === 0 || !distributorName.trim()}
+                className="w-full bg-primary text-primary-foreground font-black py-5 rounded-[1.8rem] shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                <Check size={20} className="inline ml-2" />
-                تأكيد التسليم وخصم من المخزون
+                {loading ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    جارٍ التسليم...
+                  </>
+                ) : (
+                  <>
+                    <Check size={20} />
+                    تأكيد التسليم وخصم من المخزون
+                  </>
+                )}
               </button>
             </form>
           </div>
