@@ -107,7 +107,7 @@ const CollectionsTab: React.FC = () => {
         <div className="bg-success/10 rounded-2xl p-4 text-center">
           <p className="text-sm text-muted-foreground">إجمالي التحصيلات</p>
           <p className="text-2xl font-black text-success">
-            {totalAmount.toLocaleString('ar-SA')} ر.س
+            {totalAmount.toLocaleString('ar-SA')} ل.س
           </p>
         </div>
         <div className="bg-muted rounded-2xl p-4 text-center">
@@ -134,7 +134,7 @@ const CollectionsTab: React.FC = () => {
               {filteredCollections.map((coll) => (
                 <tr key={coll.id} className={`hover:bg-muted/50 ${coll.is_reversed ? 'opacity-50' : ''}`}>
                   <td className="p-4 font-bold text-success">
-                    {Number(coll.amount).toLocaleString('ar-SA')} ر.س
+                    {Number(coll.amount).toLocaleString('ar-SA')} ل.س
                   </td>
                   <td className="p-4 text-muted-foreground text-sm">{coll.notes || '-'}</td>
                   <td className="p-4">

@@ -35,7 +35,7 @@ const DebtsTab: React.FC = () => {
           <span className="text-muted-foreground">إجمالي ديون العملاء</span>
         </div>
         <p className="text-4xl font-black text-destructive">
-          {totalDebt.toLocaleString('ar-SA')} ر.س
+          {totalDebt.toLocaleString('ar-SA')} ل.س
         </p>
         <p className="text-sm text-muted-foreground mt-2">
           {debtCustomers.length} عميل لديهم ديون مستحقة
@@ -99,7 +99,7 @@ const DebtsTab: React.FC = () => {
                   </td>
                   <td className="p-4">
                     <span className="text-xl font-black text-destructive">
-                      {Number(customer.balance).toLocaleString('ar-SA')} ر.س
+                      {Number(customer.balance).toLocaleString('ar-SA')} ل.س
                     </span>
                   </td>
                 </tr>

@@ -11,7 +11,8 @@ import {
   Package,
   UserPlus,
   Phone,
-  ChevronDown
+  ChevronDown,
+  MapPin
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 
@@ -33,6 +34,7 @@ const NewSaleTab: React.FC = () => {
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [newCustomerLocation, setNewCustomerLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [addingCustomer, setAddingCustomer] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -110,16 +112,24 @@ const NewSaleTab: React.FC = () => {
 
   const handleAddCustomer = async () => {
     if (!newCustomerName.trim()) {
-      addNotification('يرجى إدخال اسم العميل', 'warning');
+      addNotification('يرجى إدخال اسم الزبون', 'warning');
+      return;
+    }
+
+    // Validate phone number if provided (must be numeric)
+    if (newCustomerPhone.trim() && !/^[0-9+\-\s]+$/.test(newCustomerPhone.trim())) {
+      addNotification('رقم الهاتف غير صالح', 'warning');
       return;
     }
 
     setAddingCustomer(true);
     try {
-      await addCustomer(newCustomerName.trim(), newCustomerPhone.trim());
+      await addCustomer(newCustomerName.trim(), newCustomerPhone.trim(), newCustomerLocation.trim());
       setNewCustomerName('');
       setNewCustomerPhone('');
+      setNewCustomerLocation('');
       setShowAddCustomerModal(false);
+      addNotification('تم إضافة الزبون بنجاح', 'success');
     } catch (error) {
       console.error('Error adding customer:', error);
     } finally {
@@ -322,15 +332,33 @@ const NewSaleTab: React.FC = () => {
               
               <div>
                 <label className="text-sm font-bold text-gray-600 mb-2 block">
-                  رقم الهاتف (اختياري)
+                  رقم الهاتف
                 </label>
                 <div className="relative">
                   <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="tel"
-                    placeholder="05xxxxxxxx"
+                    inputMode="numeric"
+                    placeholder="09xxxxxxxx"
                     value={newCustomerPhone}
-                    onChange={(e) => setNewCustomerPhone(e.target.value)}
+                    onChange={(e) => setNewCustomerPhone(e.target.value.replace(/[^0-9+\-\s]/g, ''))}
+                    className="w-full bg-gray-50 border-none rounded-xl px-12 py-4 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    disabled={addingCustomer}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray-600 mb-2 block">
+                  موقع الزبون
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="أدخل موقع أو عنوان الزبون"
+                    value={newCustomerLocation}
+                    onChange={(e) => setNewCustomerLocation(e.target.value)}
                     className="w-full bg-gray-50 border-none rounded-xl px-12 py-4 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     disabled={addingCustomer}
                   />

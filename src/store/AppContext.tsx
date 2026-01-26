@@ -54,7 +54,7 @@ interface AppContextType {
   voidSale: (saleId: string, reason: string) => Promise<void>;
   addCollection: (saleId: string, amount: number, notes?: string) => Promise<void>;
   reversePayment: (paymentId: string, reason: string) => Promise<void>;
-  addCustomer: (name: string, phone: string) => Promise<void>;
+  addCustomer: (name: string, phone: string, location?: string) => Promise<void>;
   addDistributor: (name: string, phone: string, role: UserRole, type: EmployeeType) => Promise<{ code: string; employee: PendingEmployee | null }>;
   addProduct: (product: Omit<Product, 'id' | 'organization_id'>) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
@@ -651,11 +651,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           } catch (e) { handleError(e); }
         },
 
-        addCustomer: async (n, p) => {
+        addCustomer: async (n, p, loc) => {
           try {
             await supabase.from('customers').insert({
               name: n,
               phone: p,
+              location: loc || null,
               organization_id: organization?.id
             });
             await refreshAllData();
