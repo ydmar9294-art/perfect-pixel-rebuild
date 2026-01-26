@@ -4,12 +4,11 @@ import {
   RotateCcw, 
   Wallet, 
   Users,
-  Sparkles,
   LogOut,
-  Bell,
   UserPlus
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import NewSaleTab from './NewSaleTab';
 import SalesReturnTab from './SalesReturnTab';
 import CollectionTab from './CollectionTab';
@@ -94,11 +93,8 @@ const DistributorDashboard: React.FC = () => {
             <LogOut className={`w-5 h-5 ${loggingOut ? 'animate-spin' : ''}`} />
           </button>
           
-          {/* Center: AI Assistant Button */}
-          <button className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-full shadow-lg">
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-bold">المساعد الذكي</span>
-          </button>
+          {/* Center: Notification Center */}
+          <NotificationCenter />
         </div>
       </div>
 
