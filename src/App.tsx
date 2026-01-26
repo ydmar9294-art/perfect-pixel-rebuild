@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from '@/store/AppContext';
 import { UserRole, EmployeeType } from '@/types';
 import { Layout } from '@/components/Layout';
@@ -25,6 +25,7 @@ import DistributorDashboard from '@/components/distributor/DistributorDashboard'
 import AccountantDashboard from '@/components/accountant/AccountantDashboard';
 import OwnerDashboard from '@/components/owner/OwnerDashboard';
 import UnifiedActivation from '@/components/auth/UnifiedActivation';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 // ==========================================
 // LOGIN VIEW
@@ -485,6 +486,9 @@ const ViewManager: React.FC = () => {
 const MainContent: React.FC = () => {
   const { user, isLoading } = useApp();
   const [showRetry, setShowRetry] = useState(false);
+  
+  // Initialize push notifications
+  const { isInitialized: pushInitialized } = usePushNotifications();
 
   // إظهار زر إعادة المحاولة بعد 5 ثواني
   React.useEffect(() => {
