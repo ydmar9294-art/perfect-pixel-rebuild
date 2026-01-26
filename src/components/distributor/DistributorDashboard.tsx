@@ -5,7 +5,7 @@ import {
   Wallet, 
   Users,
   Sparkles,
-  Menu,
+  LogOut,
   Bell,
   UserPlus
 } from 'lucide-react';
@@ -84,13 +84,14 @@ const DistributorDashboard: React.FC = () => {
       {/* Top Header */}
       <div className="bg-gray-50 pt-4 px-4">
         <div className="flex items-center justify-between mb-4">
-          {/* Left: Menu */}
+          {/* Left: Logout */}
           <button 
             onClick={handleLogout}
             disabled={loggingOut}
-            className="p-2 text-gray-500 hover:text-gray-700"
+            className="p-2.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all"
+            title="تسجيل الخروج"
           >
-            <Menu className={`w-6 h-6 ${loggingOut ? 'animate-spin' : ''}`} />
+            <LogOut className={`w-5 h-5 ${loggingOut ? 'animate-spin' : ''}`} />
           </button>
           
           {/* Center: AI Assistant Button */}
