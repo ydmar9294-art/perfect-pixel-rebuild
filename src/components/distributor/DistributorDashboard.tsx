@@ -99,14 +99,6 @@ const DistributorDashboard: React.FC = () => {
             <Sparkles className="w-4 h-4" />
             <span className="text-sm font-bold">المساعد الذكي</span>
           </button>
-          
-          {/* Right: Notifications */}
-          <div className="relative">
-            <Bell className="w-6 h-6 text-gray-500" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
-              5
-            </span>
-          </div>
         </div>
       </div>
 
