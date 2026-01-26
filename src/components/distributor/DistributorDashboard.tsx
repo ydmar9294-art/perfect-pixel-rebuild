@@ -4,9 +4,10 @@ import {
   RotateCcw, 
   Wallet, 
   Users,
-  Plus,
-  TrendingUp,
-  LogOut
+  Sparkles,
+  Menu,
+  Bell,
+  UserPlus
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import NewSaleTab from './NewSaleTab';
@@ -17,17 +18,10 @@ import CustomerDebtsTab from './CustomerDebtsTab';
 type DistributorTabType = 'new-sale' | 'returns' | 'collections' | 'debts';
 
 const DistributorDashboard: React.FC = () => {
-  const { sales, customers, logout, user } = useApp();
+  const { customers, logout, user } = useApp();
   const [activeTab, setActiveTab] = useState<DistributorTabType>('new-sale');
   const [loggingOut, setLoggingOut] = useState(false);
 
-  // Calculate KPIs
-  const todaySales = sales.filter(s => {
-    const today = new Date().toDateString();
-    return new Date(s.timestamp).toDateString() === today && !s.isVoided;
-  });
-
-  const todayTotal = todaySales.reduce((sum, s) => sum + Number(s.grandTotal), 0);
   const totalDebt = customers.reduce((sum, c) => sum + Number(c.balance), 0);
 
   const handleLogout = async () => {
@@ -39,11 +33,35 @@ const DistributorDashboard: React.FC = () => {
     }
   };
 
-  const tabs: { id: DistributorTabType; label: string; icon: React.ReactNode }[] = [
-    { id: 'new-sale', label: 'فاتورة جديدة', icon: <Plus className="w-5 h-5" /> },
-    { id: 'returns', label: 'المرتجعات', icon: <RotateCcw className="w-5 h-5" /> },
-    { id: 'collections', label: 'التحصيلات', icon: <Wallet className="w-5 h-5" /> },
-    { id: 'debts', label: 'الديون', icon: <Users className="w-5 h-5" /> },
+  const tabs: { id: DistributorTabType; label: string; icon: React.ReactNode; color: string; bgColor: string }[] = [
+    { 
+      id: 'new-sale', 
+      label: 'فاتورة', 
+      icon: <FileText className="w-5 h-5" />,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-600'
+    },
+    { 
+      id: 'collections', 
+      label: 'تحصيل', 
+      icon: <Wallet className="w-5 h-5" />,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-600'
+    },
+    { 
+      id: 'returns', 
+      label: 'مرتجع', 
+      icon: <RotateCcw className="w-5 h-5" />,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-500'
+    },
+    { 
+      id: 'debts', 
+      label: 'الزبائن', 
+      icon: <Users className="w-5 h-5" />,
+      color: 'text-red-500',
+      bgColor: 'bg-red-500'
+    },
   ];
 
   const renderTabContent = () => {
@@ -62,101 +80,97 @@ const DistributorDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
-      {/* Professional Header with Dark Gradient */}
-      <div className="bg-slate-900 pt-6 pb-10 px-4 relative overflow-hidden">
-        {/* Modern Oval/Circular Background Pattern */}
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(ellipse 60% 40% at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 70%)', backgroundSize: '80px 60px' }}></div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-        
-        {/* Header Content */}
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 bg-gradient-to-br from-primary via-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl shadow-primary/40 animate-float ring-4 ring-white/10">
-                <FileText className="w-7 h-7 text-white drop-shadow-lg" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black text-white">لوحة الموزع</h1>
-                {user && (
-                  <p className="text-white/50 text-xs font-medium">{user.name}</p>
-                )}
-              </div>
-            </div>
-            
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white rounded-xl transition-all duration-200 border border-white/10"
-            >
-              <LogOut className={`w-4 h-4 ${loggingOut ? 'animate-spin' : ''}`} />
-              <span className="text-xs font-bold">خروج</span>
-            </button>
-          </div>
+    <div className="min-h-screen bg-gray-50" dir="rtl">
+      {/* Top Header */}
+      <div className="bg-gray-50 pt-4 px-4">
+        <div className="flex items-center justify-between mb-4">
+          {/* Left: Menu */}
+          <button 
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="p-2 text-gray-500 hover:text-gray-700"
+          >
+            <Menu className={`w-6 h-6 ${loggingOut ? 'animate-spin' : ''}`} />
+          </button>
           
-          {/* Quick Stats - Premium Style */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-primary/20 rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-primary" />
-                </div>
-                <span className="text-xs text-white/60 font-bold">مبيعات اليوم</span>
-              </div>
-              <p className="text-2xl font-black text-white">
-                {todayTotal.toLocaleString('ar-SA')}
-              </p>
-              <p className="text-xs text-white/40 mt-1">
-                {todaySales.length} فاتورة
-              </p>
-            </div>
-            
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-warning/20 rounded-xl flex items-center justify-center">
-                  <Wallet className="w-4 h-4 text-warning" />
-                </div>
-                <span className="text-xs text-white/60 font-bold">إجمالي الديون</span>
-              </div>
-              <p className="text-2xl font-black text-white">
-                {totalDebt.toLocaleString('ar-SA')}
-              </p>
-              <p className="text-xs text-white/40 mt-1">
-                {customers.filter(c => Number(c.balance) > 0).length} عميل
-              </p>
-            </div>
+          {/* Center: AI Assistant Button */}
+          <button className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-full shadow-lg">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-sm font-bold">المساعد الذكي</span>
+          </button>
+          
+          {/* Right: Notifications */}
+          <div className="relative">
+            <Bell className="w-6 h-6 text-gray-500" />
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+              5
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Tab Content with smooth top margin */}
-      <div className="p-4 -mt-4 relative z-20">
-        <div className="bg-card rounded-t-3xl shadow-lg border -mx-4 px-4 pt-6 min-h-[60vh]">
-          {renderTabContent()}
-        </div>
-      </div>
-
-      {/* Bottom Navigation - Premium Style */}
-      <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-white/10 p-2 z-50">
-        <div className="flex justify-around gap-1 max-w-lg mx-auto">
+      {/* Tab Navigation - Pill Style */}
+      <div className="px-4 pb-4">
+        <div className="bg-white rounded-3xl p-2 shadow-sm flex gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-2xl text-[10px] font-black transition-all duration-200 ${
+              className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl transition-all duration-300 ${
                 activeTab === tab.id 
-                  ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-105' 
-                  : 'text-white/50 hover:text-white/80 hover:bg-white/10'
+                  ? `${tab.bgColor} text-white shadow-lg` 
+                  : 'text-gray-500 hover:bg-gray-50'
               }`}
             >
-              {tab.icon}
-              <span>{tab.label}</span>
+              <div className={`${activeTab === tab.id ? 'scale-110' : ''} transition-transform duration-300`}>
+                {tab.icon}
+              </div>
+              <span className="text-[11px] font-bold">{tab.label}</span>
             </button>
           ))}
         </div>
       </div>
+
+      {/* Customer Selection Card */}
+      <div className="px-4 mb-4">
+        <div className="bg-white rounded-3xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-gray-400 text-sm">اختيار الزبون</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-md hover:bg-blue-700 transition-colors">
+              <UserPlus className="w-5 h-5 text-white" />
+            </button>
+            <button className="flex-1 flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3.5">
+              <span className="text-gray-400 font-medium">- ابحث عن زبون -</span>
+              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="px-4 pb-32">
+        <div className="bg-white rounded-3xl shadow-sm min-h-[50vh] overflow-hidden">
+          {renderTabContent()}
+        </div>
+      </div>
+
+      {/* Summary Card - Only for Debts Tab */}
+      {activeTab === 'debts' && (
+        <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 bg-gradient-to-t from-gray-50 via-gray-50 pt-8">
+          <div className="bg-white rounded-2xl p-4 shadow-lg flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm">إجمالي الذمم الميدانية:</p>
+            </div>
+            <p className="text-2xl font-black text-emerald-600">
+              {totalDebt.toLocaleString('ar-SA')} ل.س
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
