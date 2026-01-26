@@ -31,9 +31,8 @@ import UnifiedActivation from '@/components/auth/UnifiedActivation';
 import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
 
 const LoginView: React.FC = () => {
-  const { login, loginDeveloper, isLoading, addNotification, developerExists } = useApp();
+  const { login, isLoading, addNotification } = useApp();
   const [mode, setMode] = useState<'login' | 'activate'>('login');
-  const [isDeveloperMode, setIsDeveloperMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -59,16 +58,8 @@ const LoginView: React.FC = () => {
 
     setLocalLoading(true);
     try {
-      if (isDeveloperMode) {
-        const success = await loginDeveloper(email.trim(), password.trim());
-        if (!success) addNotification("بيانات المطور غير صحيحة", "error");
-      } else {
-        if (!developerExists) {
-          addNotification("يجب تسجيل دخول المطور أولاً", "error");
-          return;
-        }
-        await login(email.trim(), password.trim());
-      }
+      // Developer login is disabled - all users can login directly
+      await login(email.trim(), password.trim());
     } catch (err: any) {
       addNotification(err.message || "فشلت عملية الدخول", "error");
     } finally {
@@ -77,22 +68,20 @@ const LoginView: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col font-tajawal relative ${isDeveloperMode ? 'bg-slate-900' : 'bg-background'}`} dir="rtl">
+    <div className="min-h-screen flex flex-col font-tajawal relative bg-background" dir="rtl">
       {/* Header Section */}
-      <div className={`${isDeveloperMode ? 'bg-slate-800 border-b border-white/5' : 'bg-slate-900'} pt-14 pb-16 px-6 relative overflow-hidden flex flex-col items-center shrink-0`}>
+      <div className="bg-slate-900 pt-14 pb-16 px-6 relative overflow-hidden flex flex-col items-center shrink-0">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
         
         {/* Logo */}
-        <div className={`w-20 h-20 rounded-[1.8rem] flex items-center justify-center shadow-2xl mb-5 z-10 border-4 border-white/5 animate-float ${isDeveloperMode ? 'bg-primary' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
-          {isDeveloperMode ? <Terminal size={40} className="text-white" /> : <ShieldCheck size={40} className="text-white" />}
+        <div className="w-20 h-20 rounded-[1.8rem] flex items-center justify-center shadow-2xl mb-5 z-10 border-4 border-white/5 animate-float bg-gradient-to-br from-blue-500 to-indigo-600">
+          <ShieldCheck size={40} className="text-white" />
         </div>
         
         {/* Title */}
-        <h1 className="text-3xl font-black text-white mb-2 tracking-tight z-10">
-          {isDeveloperMode ? 'بوابة المطورين' : 'النظام الذكي'}
-        </h1>
+        <h1 className="text-3xl font-black text-white mb-2 tracking-tight z-10">النظام الذكي</h1>
         
-        {/* Subtitle - Moved down with more spacing */}
+        {/* Subtitle */}
         <p className="text-white/50 text-[11px] font-bold z-10 text-center leading-relaxed max-w-[200px]">
           الخاص بإدارة البيع والتوزيع للمنشآت الصغيرة
         </p>
@@ -102,39 +91,33 @@ const LoginView: React.FC = () => {
       <div className="max-w-md w-full mx-auto px-6 -mt-8 z-20 flex-1 flex flex-col pb-24">
         <div className="bg-card rounded-[2.5rem] shadow-xl border overflow-hidden">
           
-          {/* Tab Switcher with Animation */}
+          {/* Tab Switcher */}
           <div className={`flex bg-muted p-1.5 m-4 rounded-2xl border tab-container-animated ${tabSwitching ? 'switching' : ''}`}>
-            {!isDeveloperMode ? (
-              <>
-                <button 
-                  onClick={() => handleTabSwitch('login')} 
-                  className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
-                    mode === 'login' 
-                      ? 'bg-card text-foreground shadow-md' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  تسجيل الدخول
-                </button>
-                <button 
-                  onClick={() => handleTabSwitch('activate')} 
-                  className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
-                    mode === 'activate' 
-                      ? 'bg-card text-foreground shadow-md' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  تفعيل حساب جديد
-                </button>
-              </>
-            ) : (
-              <div className="w-full text-center py-3.5 font-black text-foreground text-sm">واجهة التطوير التقني</div>
-            )}
+            <button 
+              onClick={() => handleTabSwitch('login')} 
+              className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
+                mode === 'login' 
+                  ? 'bg-card text-foreground shadow-md' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              تسجيل الدخول
+            </button>
+            <button 
+              onClick={() => handleTabSwitch('activate')} 
+              className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
+                mode === 'activate' 
+                  ? 'bg-card text-foreground shadow-md' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              تفعيل حساب جديد
+            </button>
           </div>
           
-          {/* Content with Animation */}
+          {/* Content */}
           <div className="tab-content-enter" key={mode}>
-            {mode === 'login' || isDeveloperMode ? (
+            {mode === 'login' ? (
               <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
                 <input 
                   type="email" 
@@ -173,7 +156,7 @@ const LoginView: React.FC = () => {
           </div>
           
           {/* Forgot Password Link */}
-          {mode === 'login' && !isDeveloperMode && (
+          {mode === 'login' && (
             <div className="px-8 pb-5">
               <button 
                 type="button" 
@@ -186,17 +169,6 @@ const LoginView: React.FC = () => {
               </button>
             </div>
           )}
-          
-          {/* Developer Toggle */}
-          <div className="px-8 pb-6 border-t border-border pt-4 flex justify-center">
-            <button 
-              onClick={() => setIsDeveloperMode(!isDeveloperMode)} 
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all"
-              title={isDeveloperMode ? 'العودة لواجهة المستخدم' : 'بوابة المطورين'}
-            >
-              {isDeveloperMode ? <Store size={18} /> : <Terminal size={18} />}
-            </button>
-          </div>
         </div>
       </div>
 

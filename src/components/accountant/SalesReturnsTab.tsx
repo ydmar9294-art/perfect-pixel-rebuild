@@ -101,7 +101,7 @@ const SalesReturnsTab: React.FC = () => {
       <div className="bg-warning/10 rounded-2xl p-4 text-center">
         <p className="text-sm text-muted-foreground">إجمالي مرتجعات المبيعات</p>
         <p className="text-2xl font-black text-warning">
-          {totalAmount.toLocaleString('ar-SA')} ر.س
+          {totalAmount.toLocaleString('ar-SA')} ل.س
         </p>
         <p className="text-xs text-muted-foreground mt-1">
           {filteredReturns.length} عملية إرجاع
@@ -124,7 +124,7 @@ const SalesReturnsTab: React.FC = () => {
               {filteredReturns.map((ret) => (
                 <tr key={ret.id} className="hover:bg-muted/50">
                   <td className="p-4 font-bold">{ret.customer_name}</td>
-                  <td className="p-4 font-bold text-warning">{Number(ret.total_amount).toLocaleString('ar-SA')} ر.س</td>
+                  <td className="p-4 font-bold text-warning">{Number(ret.total_amount).toLocaleString('ar-SA')} ل.س</td>
                   <td className="p-4 text-muted-foreground text-sm">{ret.reason || '-'}</td>
                   <td className="p-4 text-muted-foreground text-sm">
                     {new Date(ret.created_at).toLocaleDateString('ar-SA')}
