@@ -128,7 +128,7 @@ const OwnerDashboard: React.FC = () => {
     { 
       id: 'customers', 
       label: 'الزبائن', 
-      icon: <DollarSign className="w-5 h-5" />,
+      icon: <span className="text-sm font-bold">ل.س</span>,
       color: 'text-red-500',
       bgColor: 'bg-red-500'
     },
