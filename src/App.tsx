@@ -33,7 +33,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
 
 const LoginView: React.FC = () => {
-  const { login, isLoading, addNotification } = useApp();
+  const { login, loginDeveloper, isLoading, addNotification, developerExists } = useApp();
   const [mode, setMode] = useState<'login' | 'activate'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,6 +41,7 @@ const LoginView: React.FC = () => {
   const [localLoading, setLocalLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [tabSwitching, setTabSwitching] = useState(false);
+  const [isDeveloperMode, setIsDeveloperMode] = useState(false);
 
   const handleTabSwitch = (newMode: 'login' | 'activate') => {
     if (mode === newMode) return;
@@ -60,13 +61,27 @@ const LoginView: React.FC = () => {
 
     setLocalLoading(true);
     try {
-      // Developer login is disabled - all users can login directly
-      await login(email.trim(), password.trim());
+      if (isDeveloperMode) {
+        // Developer login mode
+        const success = await loginDeveloper(email.trim(), password.trim());
+        if (!success) {
+          // Error notification already shown by loginDeveloper
+        }
+      } else {
+        // Normal user login
+        await login(email.trim(), password.trim());
+      }
     } catch (err: any) {
       addNotification(err.message || "فشلت عملية الدخول", "error");
     } finally {
       setLocalLoading(false);
     }
+  };
+
+  const toggleDeveloperMode = () => {
+    setIsDeveloperMode(!isDeveloperMode);
+    setEmail('');
+    setPassword('');
   };
 
   return (
@@ -75,17 +90,39 @@ const LoginView: React.FC = () => {
       <div className="bg-slate-900 pt-14 pb-16 px-6 relative overflow-hidden flex flex-col items-center shrink-0">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
         
+        {/* Developer Mode Toggle */}
+        <button
+          onClick={toggleDeveloperMode}
+          className={`absolute top-4 left-4 p-2 rounded-xl transition-all z-20 ${
+            isDeveloperMode 
+              ? 'bg-primary text-primary-foreground shadow-lg' 
+              : 'bg-white/10 text-white/40 hover:bg-white/20 hover:text-white/60'
+          }`}
+          title={isDeveloperMode ? 'إيقاف وضع المطور' : 'وضع المطور'}
+        >
+          <Terminal size={18} />
+        </button>
+        
         {/* Logo */}
-        <div className="w-20 h-20 rounded-[1.8rem] flex items-center justify-center shadow-2xl mb-5 z-10 border-4 border-white/5 animate-float bg-gradient-to-br from-blue-500 to-indigo-600">
-          <ShieldCheck size={40} className="text-white" />
+        <div className={`w-20 h-20 rounded-[1.8rem] flex items-center justify-center shadow-2xl mb-5 z-10 border-4 border-white/5 animate-float ${
+          isDeveloperMode 
+            ? 'bg-gradient-to-br from-emerald-500 to-teal-600' 
+            : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+        }`}>
+          {isDeveloperMode ? <Terminal size={40} className="text-white" /> : <ShieldCheck size={40} className="text-white" />}
         </div>
         
         {/* Title */}
-        <h1 className="text-3xl font-black text-white mb-2 tracking-tight z-10">النظام الذكي</h1>
+        <h1 className="text-3xl font-black text-white mb-2 tracking-tight z-10">
+          {isDeveloperMode ? 'وضع المطور' : 'النظام الذكي'}
+        </h1>
         
         {/* Subtitle */}
         <p className="text-white/50 text-[11px] font-bold z-10 text-center leading-relaxed max-w-[200px]">
-          الخاص بإدارة البيع والتوزيع للمنشآت الصغيرة
+          {isDeveloperMode 
+            ? (developerExists ? 'تسجيل دخول المطور المعتمد' : 'تسجيل المطور الأول في النظام')
+            : 'الخاص بإدارة البيع والتوزيع للمنشآت الصغيرة'
+          }
         </p>
       </div>
 
@@ -93,33 +130,91 @@ const LoginView: React.FC = () => {
       <div className="max-w-md w-full mx-auto px-6 -mt-8 z-20 flex-1 flex flex-col pb-24">
         <div className="bg-card rounded-[2.5rem] shadow-xl border overflow-hidden">
           
-          {/* Tab Switcher */}
-          <div className={`flex bg-muted p-1.5 m-4 rounded-2xl border tab-container-animated ${tabSwitching ? 'switching' : ''}`}>
-            <button 
-              onClick={() => handleTabSwitch('login')} 
-              className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
-                mode === 'login' 
-                  ? 'bg-card text-foreground shadow-md' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              تسجيل الدخول
-            </button>
-            <button 
-              onClick={() => handleTabSwitch('activate')} 
-              className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
-                mode === 'activate' 
-                  ? 'bg-card text-foreground shadow-md' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              تفعيل حساب جديد
-            </button>
-          </div>
+          {/* Tab Switcher - Hidden in Developer Mode */}
+          {!isDeveloperMode && (
+            <div className={`flex bg-muted p-1.5 m-4 rounded-2xl border tab-container-animated ${tabSwitching ? 'switching' : ''}`}>
+              <button 
+                onClick={() => handleTabSwitch('login')} 
+                className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
+                  mode === 'login' 
+                    ? 'bg-card text-foreground shadow-md' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                تسجيل الدخول
+              </button>
+              <button 
+                onClick={() => handleTabSwitch('activate')} 
+                className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
+                  mode === 'activate' 
+                    ? 'bg-card text-foreground shadow-md' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                تفعيل حساب جديد
+              </button>
+            </div>
+          )}
+          
+          {/* Developer Mode Header */}
+          {isDeveloperMode && (
+            <div className="p-4 m-4 mb-0 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500 rounded-xl">
+                  <Terminal size={16} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-emerald-700 dark:text-emerald-300">
+                    {developerExists ? 'تسجيل دخول المطور' : 'تسجيل المطور الأول'}
+                  </p>
+                  <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">
+                    {developerExists ? 'أدخل بيانات حساب المطور المسجل' : 'سيتم تسجيلك كمطور رئيسي للنظام'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Content */}
-          <div className="tab-content-enter" key={mode}>
-            {mode === 'login' ? (
+          <div className="tab-content-enter" key={isDeveloperMode ? 'dev' : mode}>
+            {isDeveloperMode ? (
+              /* Developer Login Form */
+              <form onSubmit={handleSubmit} className="px-6 py-6 space-y-4">
+                <input 
+                  type="email" 
+                  placeholder="بريد المطور الإلكتروني" 
+                  value={email} 
+                  disabled={localLoading}
+                  className="input-field" 
+                  onChange={e => setEmail(e.target.value)} 
+                />
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="كلمة مرور المطور" 
+                    value={password} 
+                    disabled={localLoading}
+                    className="input-field" 
+                    onChange={e => setPassword(e.target.value)} 
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={localLoading || isLoading} 
+                  className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl hover:bg-emerald-700"
+                >
+                  {(localLoading || isLoading) ? <Loader2 size={24} className="animate-spin" /> : (
+                    <>
+                      <Terminal size={20} />
+                      {developerExists ? 'دخول المطور' : 'تسجيل كمطور'}
+                    </>
+                  )}
+                </button>
+              </form>
+            ) : mode === 'login' ? (
               <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
                 <input 
                   type="email" 
@@ -157,8 +252,8 @@ const LoginView: React.FC = () => {
             )}
           </div>
           
-          {/* Forgot Password Link */}
-          {mode === 'login' && (
+          {/* Forgot Password Link - Hidden in Developer Mode */}
+          {mode === 'login' && !isDeveloperMode && (
             <div className="px-8 pb-5">
               <button 
                 type="button" 
