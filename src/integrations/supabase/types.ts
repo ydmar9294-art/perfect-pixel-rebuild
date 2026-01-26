@@ -212,6 +212,54 @@ export type Database = {
         }
         Relationships: []
       }
+      distributor_inventory: {
+        Row: {
+          created_at: string
+          distributor_id: string
+          id: string
+          organization_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          distributor_id: string
+          id?: string
+          organization_id: string
+          product_id: string
+          product_name: string
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          distributor_id?: string
+          id?: string
+          organization_id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distributor_inventory_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distributor_inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_users: {
         Row: {
           created_at: string

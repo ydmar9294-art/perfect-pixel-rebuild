@@ -7,11 +7,8 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
-  Calendar,
-  Filter,
-  Search,
-  Download,
-  BarChart3
+  BarChart3,
+  LogOut
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,10 +23,20 @@ import ReportsTab from './ReportsTab';
 type AccountantTabType = 'sales' | 'purchases' | 'sales-returns' | 'purchase-returns' | 'collections' | 'debts' | 'reports';
 
 const AccountantDashboard: React.FC = () => {
-  const { sales, customers } = useApp();
+  const { sales, customers, logout } = useApp();
   const [activeTab, setActiveTab] = useState<AccountantTabType>('sales');
   const [purchasesTotal, setPurchasesTotal] = useState(0);
   const [collectionsTotal, setCollectionsTotal] = useState(0);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   // Calculate KPIs
   const totalSales = sales.filter(s => !s.isVoided).reduce((sum, s) => sum + Number(s.grandTotal), 0);
@@ -107,6 +114,16 @@ const AccountantDashboard: React.FC = () => {
               <p className="text-xs text-gray-500">إدارة العمليات المالية</p>
             </div>
           </div>
+          
+          {/* Logout Button */}
+          <button 
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="p-2.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all"
+            title="تسجيل الخروج"
+          >
+            <LogOut className={`w-5 h-5 ${loggingOut ? 'animate-spin' : ''}`} />
+          </button>
         </div>
         
         {/* KPI Cards - Modern Light Style */}
