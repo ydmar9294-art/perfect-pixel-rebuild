@@ -483,7 +483,7 @@ export const InventoryTab: React.FC = () => {
                     <option value="">اختر...</option>
                     {products.filter(p => p.stock > 0).map(p => <option key={p.id} value={p.id}>{p.name} ({p.stock})</option>)}
                   </select>
-                  <input type="number" min="1" value={deliveryItemQty} onChange={(e) => setDeliveryItemQty(Number(e.target.value))} className="input-field w-16 text-center" />
+                  <input type="number" min="1" value={deliveryItemQty} onChange={(e) => setDeliveryItemQty(Number(e.target.value))} className="input-field w-16 text-center text-foreground" />
                   <button type="button" onClick={addDeliveryItem} className="px-3 bg-primary text-primary-foreground rounded-xl">
                     <Plus size={18} />
                   </button>
