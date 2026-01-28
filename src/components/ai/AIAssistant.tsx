@@ -109,10 +109,10 @@ const AIAssistant: React.FC = () => {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-full shadow-lg hover:bg-slate-700 transition-all"
+        className="p-2.5 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full shadow-md text-white hover:from-purple-600 hover:to-blue-700 transition-all"
+        title="المساعد الذكي"
       >
-        <Sparkles className="w-4 h-4" />
-        <span className="text-sm font-bold">المساعد الذكي</span>
+        <Sparkles className="w-5 h-5" />
       </button>
     );
   }
