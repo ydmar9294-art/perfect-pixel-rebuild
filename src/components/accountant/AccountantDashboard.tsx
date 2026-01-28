@@ -8,7 +8,8 @@ import {
   TrendingUp,
   TrendingDown,
   BarChart3,
-  LogOut
+  LogOut,
+  MessageCircle
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -112,15 +113,26 @@ const AccountantDashboard: React.FC = () => {
             </div>
           </div>
           
-          {/* Logout Button */}
-          <button 
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all"
-            title="تسجيل الخروج"
-          >
-            <LogOut className={`w-4 h-4 ${loggingOut ? 'animate-spin' : ''}`} />
-          </button>
+          {/* Support & Logout Buttons */}
+          <div className="flex items-center gap-2">
+            <a
+              href="https://wa.me/963947744162"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 bg-green-500 rounded-full shadow-md text-white hover:bg-green-600 transition-all"
+              title="فريق الدعم"
+            >
+              <MessageCircle className="w-4 h-4" />
+            </a>
+            <button 
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all"
+              title="تسجيل الخروج"
+            >
+              <LogOut className={`w-4 h-4 ${loggingOut ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
         
         {/* KPI Cards - Compact 2x2 Grid */}
