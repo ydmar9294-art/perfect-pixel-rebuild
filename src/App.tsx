@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppProvider, useApp } from '@/store/AppContext';
+import { useApp } from '@/store/AppContext';
 import { UserRole, EmployeeType } from '@/types';
 import { Layout } from '@/components/Layout';
 import { ToastManager } from '@/components/ToastManager';
@@ -631,11 +631,7 @@ const MainContent: React.FC = () => {
 // APP - Main Application Entry Point
 // ==========================================
 const App: React.FC = () => {
-  return (
-    <AppProvider>
-      <MainContent />
-    </AppProvider>
-  );
+  return <MainContent />;
 };
 
 export default App;
