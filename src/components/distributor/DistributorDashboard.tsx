@@ -4,9 +4,7 @@ import {
   RotateCcw, 
   Wallet, 
   Users,
-  LogOut,
-  UserPlus,
-  Sparkles
+  LogOut
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import AIAssistant from '@/components/ai/AIAssistant';
@@ -118,26 +116,6 @@ const DistributorDashboard: React.FC = () => {
               <span className="text-[11px] font-bold">{tab.label}</span>
             </button>
           ))}
-        </div>
-      </div>
-
-      {/* Customer Selection Card */}
-      <div className="px-4 mb-4">
-        <div className="bg-white rounded-3xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-gray-400 text-sm">اختيار الزبون</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-md hover:bg-blue-700 transition-colors">
-              <UserPlus className="w-5 h-5 text-white" />
-            </button>
-            <button className="flex-1 flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3.5">
-              <span className="text-gray-400 font-medium">- ابحث عن زبون -</span>
-              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
         </div>
       </div>
 
