@@ -249,7 +249,7 @@ export const DeliveriesTab: React.FC = () => {
                     min="1"
                     value={itemQuantity}
                     onChange={(e) => setItemQuantity(Number(e.target.value))}
-                    className="input-field w-20 text-center"
+                    className="input-field w-20 text-center text-foreground"
                     disabled={loading}
                   />
                   <button 

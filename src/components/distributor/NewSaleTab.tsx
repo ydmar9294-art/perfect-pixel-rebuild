@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Minus, 
@@ -15,12 +15,21 @@ import {
   MapPin
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CartItem {
   product_id: string;
   product_name: string;
   quantity: number;
   unit_price: number;
+}
+
+interface DistributorProduct {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  base_price: number;
 }
 
 const NewSaleTab: React.FC = () => {
@@ -38,11 +47,56 @@ const NewSaleTab: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [addingCustomer, setAddingCustomer] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [distributorInventory, setDistributorInventory] = useState<DistributorProduct[]>([]);
+  const [loadingInventory, setLoadingInventory] = useState(true);
 
-  const activeProducts = products.filter(p => !p.isDeleted && p.stock > 0);
+  // جلب مخزون الموزع الخاص به فقط
+  useEffect(() => {
+    const fetchDistributorInventory = async () => {
+      setLoadingInventory(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('distributor_inventory')
+          .select('id, product_id, product_name, quantity')
+          .eq('distributor_id', user.id)
+          .gt('quantity', 0);
+
+        if (error) throw error;
+
+        // جلب أسعار المنتجات من جدول المنتجات
+        const productIds = (data || []).map(d => d.product_id);
+        const { data: productsData } = await supabase
+          .from('products')
+          .select('id, base_price')
+          .in('id', productIds);
+
+        const priceMap = new Map((productsData || []).map(p => [p.id, Number(p.base_price)]));
+
+        setDistributorInventory((data || []).map(item => ({
+          id: item.id,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          base_price: priceMap.get(item.product_id) || 0
+        })));
+      } catch (err) {
+        console.error('Error fetching distributor inventory:', err);
+      } finally {
+        setLoadingInventory(false);
+      }
+    };
+
+    fetchDistributorInventory();
+  }, []);
+
+  // استخدام مخزون الموزع بدلاً من المخزون العام
+  const activeProducts = distributorInventory.filter(p => p.quantity > 0);
   
   const filteredProducts = activeProducts.filter(p =>
-    p.name.toLowerCase().includes(searchProduct.toLowerCase())
+    p.product_name.toLowerCase().includes(searchProduct.toLowerCase())
   );
 
   const filteredCustomers = customers.filter(c =>
@@ -51,22 +105,22 @@ const NewSaleTab: React.FC = () => {
 
   const selectedCustomerData = customers.find(c => c.id === selectedCustomer);
 
-  const addToCart = (product: typeof products[0]) => {
-    const existing = cart.find(item => item.product_id === product.id);
+  const addToCart = (product: DistributorProduct) => {
+    const existing = cart.find(item => item.product_id === product.product_id);
     if (existing) {
-      if (existing.quantity < product.stock) {
+      if (existing.quantity < product.quantity) {
         setCart(cart.map(item =>
-          item.product_id === product.id
+          item.product_id === product.product_id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         ));
       }
     } else {
       setCart([...cart, {
-        product_id: product.id,
-        product_name: product.name,
+        product_id: product.product_id,
+        product_name: product.product_name,
         quantity: 1,
-        unit_price: product.basePrice
+        unit_price: product.base_price
       }]);
     }
     setShowProductPicker(false);
@@ -74,12 +128,12 @@ const NewSaleTab: React.FC = () => {
   };
 
   const updateQuantity = (productId: string, delta: number) => {
-    const product = products.find(p => p.id === productId);
+    const product = distributorInventory.find(p => p.product_id === productId);
     setCart(cart.map(item => {
       if (item.product_id === productId) {
         const newQty = item.quantity + delta;
         if (newQty <= 0) return item;
-        if (product && newQty > product.stock) return item;
+        if (product && newQty > product.quantity) return item;
         return { ...item, quantity: newQty };
       }
       return item;
@@ -419,25 +473,38 @@ const NewSaleTab: React.FC = () => {
               </div>
             </div>
             <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2">
-              {filteredProducts.map((product) => (
-                <button
-                  key={product.id}
-                  onClick={() => addToCart(product)}
-                  className="w-full text-start p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-gray-800">{product.name}</p>
-                      <p className="text-sm text-gray-500">
-                        المخزون: {product.stock} {product.unit}
-                      </p>
+              {loadingInventory ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin" />
+                  <p className="font-bold">جارٍ تحميل المخزون...</p>
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Package className="w-16 h-16 mx-auto mb-3 opacity-50" />
+                  <p className="font-bold">لا توجد مواد في مخزونك</p>
+                  <p className="text-sm mt-1">تواصل مع صاحب المنشأة لتسليمك بضاعة</p>
+                </div>
+              ) : (
+                filteredProducts.map((product) => (
+                  <button
+                    key={product.id}
+                    onClick={() => addToCart(product)}
+                    className="w-full text-start p-4 bg-muted rounded-2xl hover:bg-muted/80 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-foreground">{product.product_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          المتوفر: {product.quantity}
+                        </p>
+                      </div>
+                      <span className="font-black text-primary">
+                        {Number(product.base_price).toLocaleString('ar-SA')}
+                      </span>
                     </div>
-                    <span className="font-black text-blue-600">
-                      {Number(product.basePrice).toLocaleString('ar-SA')}
-                    </span>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>
