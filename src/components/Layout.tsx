@@ -46,7 +46,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           <div className="pt-8 flex flex-col gap-3">
             <a
-              href="tel:09xxxxxxx"
+              href="tel:+963947744162"
               className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black shadow-xl transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
               <Phone size={20} />
