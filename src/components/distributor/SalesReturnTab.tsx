@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   RotateCcw, 
   Search, 
@@ -21,18 +21,49 @@ interface ReturnItem {
   max_quantity: number;
 }
 
+interface DistributorProduct {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+}
+
 const SalesReturnTab: React.FC = () => {
-  const { sales, products, refreshAllData } = useApp();
+  const { sales, refreshAllData } = useApp();
   const [selectedSaleId, setSelectedSaleId] = useState<string>('');
   const [saleItems, setSaleItems] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>('');
-  const [selectedGrade, setSelectedGrade] = useState<string>('ممتاز (يعو');
+  const [selectedGrade, setSelectedGrade] = useState<string>('ممتاز (يعود للمخزون)');
   const [quantity, setQuantity] = useState<number>(1);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingItems, setLoadingItems] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [distributorInventory, setDistributorInventory] = useState<DistributorProduct[]>([]);
+
+  // جلب مخزون الموزع الخاص به فقط
+  useEffect(() => {
+    const fetchDistributorInventory = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('distributor_inventory')
+          .select('id, product_id, product_name, quantity')
+          .eq('distributor_id', user.id)
+          .gt('quantity', 0);
+
+        if (error) throw error;
+        setDistributorInventory(data || []);
+      } catch (err) {
+        console.error('Error fetching distributor inventory:', err);
+      }
+    };
+
+    fetchDistributorInventory();
+  }, []);
 
   const activeSales = sales.filter(s => !s.isVoided);
   const selectedSale = sales.find(s => s.id === selectedSaleId);
@@ -146,9 +177,9 @@ const SalesReturnTab: React.FC = () => {
                 {item.product_name} (متوفر: {item.quantity})
               </option>
             ))}
-            {products.filter(p => !p.isDeleted).map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name}
+            {distributorInventory.map((product) => (
+              <option key={product.product_id} value={product.product_id}>
+                {product.product_name}
               </option>
             ))}
           </select>
