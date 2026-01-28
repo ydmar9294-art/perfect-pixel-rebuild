@@ -9,13 +9,11 @@ import {
   Check,
   Loader2,
   Package,
-  UserPlus,
-  Phone,
-  ChevronDown,
-  MapPin
+  AlertCircle
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
+import { Customer } from '@/types';
 
 interface CartItem {
   product_id: string;
@@ -32,20 +30,16 @@ interface DistributorProduct {
   base_price: number;
 }
 
-const NewSaleTab: React.FC = () => {
-  const { products, customers, createSale, refreshAllData, addCustomer, addNotification } = useApp();
-  const [selectedCustomer, setSelectedCustomer] = useState<string>('');
+interface NewSaleTabProps {
+  selectedCustomer: Customer | null;
+}
+
+const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
+  const { createSale, refreshAllData, addNotification } = useApp();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchProduct, setSearchProduct] = useState('');
-  const [searchCustomer, setSearchCustomer] = useState('');
-  const [showCustomerPicker, setShowCustomerPicker] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
-  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
-  const [newCustomerName, setNewCustomerName] = useState('');
-  const [newCustomerPhone, setNewCustomerPhone] = useState('');
-  const [newCustomerLocation, setNewCustomerLocation] = useState('');
   const [loading, setLoading] = useState(false);
-  const [addingCustomer, setAddingCustomer] = useState(false);
   const [success, setSuccess] = useState(false);
   const [distributorInventory, setDistributorInventory] = useState<DistributorProduct[]>([]);
   const [loadingInventory, setLoadingInventory] = useState(true);
@@ -99,12 +93,6 @@ const NewSaleTab: React.FC = () => {
     p.product_name.toLowerCase().includes(searchProduct.toLowerCase())
   );
 
-  const filteredCustomers = customers.filter(c =>
-    c.name.toLowerCase().includes(searchCustomer.toLowerCase())
-  );
-
-  const selectedCustomerData = customers.find(c => c.id === selectedCustomer);
-
   const addToCart = (product: DistributorProduct) => {
     const existing = cart.find(item => item.product_id === product.product_id);
     if (existing) {
@@ -147,47 +135,20 @@ const NewSaleTab: React.FC = () => {
   const grandTotal = cart.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
 
   const handleCreateSale = async () => {
-    if (!selectedCustomer || cart.length === 0) return;
+    if (!selectedCustomer?.id || cart.length === 0) return;
 
     setLoading(true);
     try {
-      await createSale(selectedCustomer, cart);
+      await createSale(selectedCustomer.id, cart);
       setCart([]);
-      setSelectedCustomer('');
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2000);
       await refreshAllData();
     } catch (error) {
       console.error('Error creating sale:', error);
+      addNotification('حدث خطأ أثناء إنشاء الفاتورة', 'error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAddCustomer = async () => {
-    if (!newCustomerName.trim()) {
-      addNotification('يرجى إدخال اسم الزبون', 'warning');
-      return;
-    }
-
-    // Validate phone number if provided (must be numeric)
-    if (newCustomerPhone.trim() && !/^[0-9+\-\s]+$/.test(newCustomerPhone.trim())) {
-      addNotification('رقم الهاتف غير صالح', 'warning');
-      return;
-    }
-
-    setAddingCustomer(true);
-    try {
-      await addCustomer(newCustomerName.trim(), newCustomerPhone.trim(), newCustomerLocation.trim());
-      setNewCustomerName('');
-      setNewCustomerPhone('');
-      setNewCustomerLocation('');
-      setShowAddCustomerModal(false);
-      addNotification('تم إضافة الزبون بنجاح', 'success');
-    } catch (error) {
-      console.error('Error adding customer:', error);
-    } finally {
-      setAddingCustomer(false);
     }
   };
 
@@ -201,12 +162,36 @@ const NewSaleTab: React.FC = () => {
         </div>
       )}
 
+      {/* No Customer Selected Warning */}
+      {!selectedCustomer && (
+        <div className="bg-amber-50 text-amber-700 p-4 rounded-2xl flex items-center gap-2 border border-amber-200">
+          <AlertCircle className="w-5 h-5" />
+          <span className="font-bold">يرجى اختيار زبون من القائمة أعلاه</span>
+        </div>
+      )}
+
+      {/* Selected Customer Info */}
+      {selectedCustomer && (
+        <div className="bg-blue-50 rounded-2xl p-4 flex items-center gap-3 border border-blue-200">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+            <User className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="font-bold text-gray-800">{selectedCustomer.name}</p>
+            <p className="text-sm text-gray-500">
+              الرصيد: {Number(selectedCustomer.balance).toLocaleString('ar-SA')} ل.س
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Section Title */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-black text-gray-800">الأصناف المطلوبة</h3>
         <button
           onClick={() => setShowProductPicker(true)}
           className="flex items-center gap-1.5 text-blue-600 font-bold text-sm hover:text-blue-700"
+          disabled={!selectedCustomer}
         >
           <Plus className="w-4 h-4" />
           إضافة مادة
@@ -242,7 +227,7 @@ const NewSaleTab: React.FC = () => {
                   >
                     <Minus className="w-4 h-4 text-gray-600" />
                   </button>
-                  <span className="font-black w-8 text-center text-lg">{item.quantity}</span>
+                  <span className="font-black w-8 text-center text-lg text-foreground">{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item.product_id, 1)}
                     className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700"
@@ -288,168 +273,6 @@ const NewSaleTab: React.FC = () => {
         </div>
       )}
 
-      {/* Customer Picker Modal */}
-      {showCustomerPicker && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowCustomerPicker(false)}>
-          <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="p-5 border-b bg-gray-50">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-black text-lg">اختر الزبون</h3>
-                <button onClick={() => setShowCustomerPicker(false)} className="p-2 hover:bg-gray-100 rounded-xl">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <button
-                onClick={() => {
-                  setShowCustomerPicker(false);
-                  setShowAddCustomerModal(true);
-                }}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold mb-4 hover:bg-blue-700"
-              >
-                <UserPlus className="w-5 h-5" />
-                إضافة زبون جديد
-              </button>
-              
-              <div className="relative">
-                <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="بحث..."
-                  value={searchCustomer}
-                  onChange={(e) => setSearchCustomer(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-12 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-            </div>
-            
-            <div className="max-h-[50vh] overflow-y-auto p-4 space-y-2">
-              {filteredCustomers.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <User className="w-16 h-16 mx-auto mb-3 opacity-50" />
-                  <p className="font-bold">لا يوجد زبائن</p>
-                </div>
-              ) : (
-                filteredCustomers.map((customer) => (
-                  <button
-                    key={customer.id}
-                    onClick={() => {
-                      setSelectedCustomer(customer.id);
-                      setShowCustomerPicker(false);
-                      setSearchCustomer('');
-                    }}
-                    className="w-full text-start p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
-                  >
-                    <p className="font-bold text-gray-800">{customer.name}</p>
-                    <p className="text-sm text-gray-500">
-                      الرصيد: {Number(customer.balance).toLocaleString('ar-SA')} ل.س
-                    </p>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Customer Modal */}
-      {showAddCustomerModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowAddCustomerModal(false)}>
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-black text-lg flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-blue-600" />
-                إضافة زبون جديد
-              </h3>
-              <button onClick={() => setShowAddCustomerModal(false)} className="p-2 hover:bg-gray-100 rounded-xl">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-bold text-gray-600 mb-2 block">
-                  اسم الزبون <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="أدخل اسم الزبون"
-                    value={newCustomerName}
-                    onChange={(e) => setNewCustomerName(e.target.value)}
-                    className="w-full bg-gray-50 border-none rounded-xl px-12 py-4 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    disabled={addingCustomer}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="text-sm font-bold text-gray-600 mb-2 block">
-                  رقم الهاتف
-                </label>
-                <div className="relative">
-                  <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="09xxxxxxxx"
-                    value={newCustomerPhone}
-                    onChange={(e) => setNewCustomerPhone(e.target.value.replace(/[^0-9+\-\s]/g, ''))}
-                    className="w-full bg-gray-50 border-none rounded-xl px-12 py-4 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    disabled={addingCustomer}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-gray-600 mb-2 block">
-                  موقع الزبون
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="أدخل موقع أو عنوان الزبون"
-                    value={newCustomerLocation}
-                    onChange={(e) => setNewCustomerLocation(e.target.value)}
-                    className="w-full bg-gray-50 border-none rounded-xl px-12 py-4 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    disabled={addingCustomer}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={handleAddCustomer}
-                disabled={addingCustomer || !newCustomerName.trim()}
-                className="flex-1 bg-emerald-500 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-bold disabled:opacity-50 hover:bg-emerald-600"
-              >
-                {addingCustomer ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    جارٍ الحفظ...
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-5 h-5" />
-                    حفظ
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => setShowAddCustomerModal(false)}
-                disabled={addingCustomer}
-                className="px-6 py-4 bg-gray-100 rounded-xl font-bold text-gray-600 hover:bg-gray-200"
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Product Picker Modal */}
       {showProductPicker && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowProductPicker(false)}>
@@ -468,39 +291,38 @@ const NewSaleTab: React.FC = () => {
                   placeholder="بحث..."
                   value={searchProduct}
                   onChange={(e) => setSearchProduct(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-12 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-12 py-3 font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
             </div>
-            <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2">
+            
+            <div className="max-h-[50vh] overflow-y-auto p-4 space-y-2">
               {loadingInventory ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin" />
-                  <p className="font-bold">جارٍ تحميل المخزون...</p>
+                <div className="text-center py-12">
+                  <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin text-blue-600" />
+                  <p className="text-gray-400 font-bold">جارٍ التحميل...</p>
                 </div>
               ) : filteredProducts.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
+                <div className="text-center py-12 text-gray-400">
                   <Package className="w-16 h-16 mx-auto mb-3 opacity-50" />
-                  <p className="font-bold">لا توجد مواد في مخزونك</p>
-                  <p className="text-sm mt-1">تواصل مع صاحب المنشأة لتسليمك بضاعة</p>
+                  <p className="font-bold">لا توجد مواد متاحة</p>
+                  <p className="text-sm mt-1">تواصل مع صاحب المنشأة لاستلام بضاعة</p>
                 </div>
               ) : (
                 filteredProducts.map((product) => (
                   <button
                     key={product.id}
                     onClick={() => addToCart(product)}
-                    className="w-full text-start p-4 bg-muted rounded-2xl hover:bg-muted/80 transition-colors"
+                    className="w-full text-start p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-foreground">{product.product_name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          المتوفر: {product.quantity}
+                        <p className="font-bold text-gray-800">{product.product_name}</p>
+                        <p className="text-sm text-gray-500">
+                          المتوفر: {product.quantity} | السعر: {product.base_price.toLocaleString('ar-SA')} ل.س
                         </p>
                       </div>
-                      <span className="font-black text-primary">
-                        {Number(product.base_price).toLocaleString('ar-SA')}
-                      </span>
+                      <Plus className="w-5 h-5 text-blue-600" />
                     </div>
                   </button>
                 ))

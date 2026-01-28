@@ -67,6 +67,8 @@ export interface Customer {
   phone?: string;
   balance: number;
   created_at?: string;
+  created_by?: string;
+  location?: string;
 }
 
 export interface Sale {

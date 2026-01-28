@@ -28,7 +28,11 @@ interface DistributorProduct {
   quantity: number;
 }
 
-const SalesReturnTab: React.FC = () => {
+interface SalesReturnTabProps {
+  selectedCustomer: import('@/types').Customer | null;
+}
+
+const SalesReturnTab: React.FC<SalesReturnTabProps> = ({ selectedCustomer }) => {
   const { sales, refreshAllData } = useApp();
   const [selectedSaleId, setSelectedSaleId] = useState<string>('');
   const [saleItems, setSaleItems] = useState<any[]>([]);
