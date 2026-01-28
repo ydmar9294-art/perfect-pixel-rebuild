@@ -628,12 +628,14 @@ const MainContent: React.FC = () => {
 };
 
 // ==========================================
-// APP
+// APP - Main Application Entry Point
 // ==========================================
-const App: React.FC = () => (
-  <AppProvider>
-    <MainContent />
-  </AppProvider>
-);
+const App: React.FC = () => {
+  return (
+    <AppProvider>
+      <MainContent />
+    </AppProvider>
+  );
+};
 
 export default App;
