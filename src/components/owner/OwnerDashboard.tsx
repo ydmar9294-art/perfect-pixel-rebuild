@@ -143,59 +143,60 @@ const OwnerDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
-      {/* Top Header */}
-      <div className="bg-gray-50 pt-4 px-4">
-        <div className="flex items-center justify-between mb-4">
-          {/* Left: Logout */}
-          <button 
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="p-2.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all"
-            title="تسجيل الخروج"
-          >
-            <LogOut className={`w-5 h-5 ${loggingOut ? 'animate-spin' : ''}`} />
-          </button>
-          
-          {/* Center: User Info */}
-          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm">
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4 text-white" />
-            </div>
-            <div className="text-end">
-              <p className="font-bold text-gray-800 text-sm">{user?.name || 'المالك'}</p>
-              <p className="text-[10px] text-gray-400">لوحة الإدارة</p>
-            </div>
-          </div>
-
-          {/* Right: Notification Center */}
-          <NotificationCenter />
-        </div>
-      </div>
-
-      {/* Tab Navigation - Pill Style */}
-      <div className="px-4 pb-4">
-        <div className="bg-white rounded-3xl p-2 shadow-sm flex gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl transition-all duration-300 ${
-                activeTab === tab.id 
-                  ? `${tab.bgColor} text-white shadow-lg` 
-                  : 'text-gray-500 hover:bg-gray-50'
-              }`}
+      <div className="max-w-lg mx-auto">
+        {/* Top Header */}
+        <div className="bg-gray-50 pt-4 px-4">
+          <div className="flex items-center justify-between mb-4">
+            {/* Left: Logout */}
+            <button 
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="p-2.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all"
+              title="تسجيل الخروج"
             >
-              <div className={`${activeTab === tab.id ? 'scale-110' : ''} transition-transform duration-300`}>
-                {tab.icon}
-              </div>
-              <span className="text-[10px] font-bold">{tab.label}</span>
+              <LogOut className={`w-5 h-5 ${loggingOut ? 'animate-spin' : ''}`} />
             </button>
-          ))}
-        </div>
-      </div>
+            
+            {/* Center: User Info */}
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-end">
+                <p className="font-bold text-gray-800 text-sm">{user?.name || 'المالك'}</p>
+                <p className="text-[10px] text-gray-400">لوحة الإدارة</p>
+              </div>
+            </div>
 
-      {/* Tab Content */}
-      <div className="px-4 pb-8">
+            {/* Right: Notification Center */}
+            <NotificationCenter />
+          </div>
+        </div>
+
+        {/* Tab Navigation - Pill Style */}
+        <div className="px-4 pb-4">
+          <div className="bg-white rounded-3xl p-2 shadow-sm flex gap-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl transition-all duration-300 ${
+                  activeTab === tab.id 
+                    ? `${tab.bgColor} text-white shadow-lg` 
+                    : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                <div className={`${activeTab === tab.id ? 'scale-110' : ''} transition-transform duration-300`}>
+                  {tab.icon}
+                </div>
+                <span className="text-[10px] font-bold">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="px-4 pb-8">
         {/* Daily Tab */}
         {activeTab === 'daily' && (
           <div className="space-y-4 animate-fade-in">
@@ -425,6 +426,7 @@ const OwnerDashboard: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };
