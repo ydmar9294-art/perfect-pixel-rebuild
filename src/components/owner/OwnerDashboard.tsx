@@ -47,6 +47,16 @@ const OwnerDashboard: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [newEmployeeCode, setNewEmployeeCode] = useState<string | null>(null);
   const [newEmployeeData, setNewEmployeeData] = useState<any | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [copiedPayment, setCopiedPayment] = useState(false);
+
+  const SHAMCASH_ADDRESS = 'efd5411a5f29e0cdb279363de2dd62b3';
+
+  const handleCopyPayment = () => {
+    navigator.clipboard.writeText(SHAMCASH_ADDRESS);
+    setCopiedPayment(true);
+    setTimeout(() => setCopiedPayment(false), 2000);
+  };
 
   React.useEffect(() => { setIsMounted(true); }, []);
 
@@ -361,8 +371,19 @@ const OwnerDashboard: React.FC = () => {
 
         {/* Finance Tab */}
         {activeTab === 'finance' && (
-          <div className="bg-white rounded-3xl shadow-sm p-4">
-            <FinanceTab />
+          <div className="space-y-4 animate-fade-in">
+            {/* ShamCash Payment Button */}
+            <button
+              onClick={() => setShowPaymentModal(true)}
+              className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
+            >
+              <Wallet className="w-5 h-5" />
+              الدفع عبر شام كاش
+            </button>
+            
+            <div className="bg-white rounded-3xl shadow-sm p-4">
+              <FinanceTab />
+            </div>
           </div>
         )}
       </div>
@@ -435,6 +456,55 @@ const OwnerDashboard: React.FC = () => {
                 </button>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ShamCash Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPaymentModal(false)}>
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 animate-zoom-in" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <Wallet className="w-6 h-6 text-green-500" />
+                الدفع عبر شام كاش
+              </h2>
+              <button onClick={() => setShowPaymentModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-center py-4">
+              <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/ShamCash_logo.svg/1200px-ShamCash_logo.svg.png" 
+                alt="ShamCash" 
+                className="h-16 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+            
+            <p className="text-center text-sm text-gray-600 font-medium">عنوان الدفع:</p>
+            <div 
+              onClick={handleCopyPayment}
+              className="bg-gray-50 p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors border-2 border-green-200"
+            >
+              <span className="font-mono text-base text-gray-800 tracking-wide" dir="ltr">{SHAMCASH_ADDRESS}</span>
+              {copiedPayment ? (
+                <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+              ) : (
+                <Copy className="w-6 h-6 text-gray-400 flex-shrink-0" />
+              )}
+            </div>
+            <p className="text-center text-xs text-gray-500">اضغط لنسخ العنوان</p>
+            
+            <button 
+              onClick={() => setShowPaymentModal(false)}
+              className="w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200"
+            >
+              إغلاق
+            </button>
           </div>
         </div>
       )}
