@@ -11,16 +11,19 @@ export interface NotificationData {
 class PushNotificationService {
   private isInitialized = false;
   private deviceToken: string | null = null;
+  private webNotificationPermission: NotificationPermission = 'default';
 
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
     
-    // Only run on native platforms
+    // Initialize for web browsers
     if (!Capacitor.isNativePlatform()) {
-      console.log('Push notifications only available on native platforms');
+      await this.initializeWebNotifications();
+      this.isInitialized = true;
       return;
     }
 
+    // Native platform initialization
     try {
       // Request permission
       const permStatus = await PushNotifications.requestPermissions();
@@ -33,7 +36,6 @@ class PushNotificationService {
         PushNotifications.addListener('registration', (token: Token) => {
           this.deviceToken = token.value;
           console.log('Push registration success, token: ' + token.value);
-          // Here you would typically send the token to your server
         });
 
         // Listen for registration errors
@@ -55,7 +57,6 @@ class PushNotificationService {
         // Listen for notification action (when user taps notification)
         PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
           console.log('Push notification action performed:', action);
-          // Handle navigation or action based on notification data
           this.handleNotificationAction(action.notification.data);
         });
 
@@ -63,12 +64,33 @@ class PushNotificationService {
         await this.initializeLocalNotifications();
         
         this.isInitialized = true;
-        console.log('Push notification service initialized');
+        console.log('Push notification service initialized (native)');
       } else {
         console.log('Push notification permission denied');
       }
     } catch (error) {
       console.error('Error initializing push notifications:', error);
+    }
+  }
+
+  private async initializeWebNotifications(): Promise<void> {
+    if (!('Notification' in window)) {
+      console.log('This browser does not support notifications');
+      return;
+    }
+
+    try {
+      // Request permission
+      const permission = await Notification.requestPermission();
+      this.webNotificationPermission = permission;
+      
+      if (permission === 'granted') {
+        console.log('Web notification permission granted');
+      } else {
+        console.log('Web notification permission:', permission);
+      }
+    } catch (error) {
+      console.error('Error requesting web notification permission:', error);
     }
   }
 
@@ -89,17 +111,25 @@ class PushNotificationService {
   }
 
   async showLocalNotification(notification: NotificationData): Promise<void> {
+    // For web browsers
     if (!Capacitor.isNativePlatform()) {
-      // For web, use browser notifications if available
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(notification.title, {
-          body: notification.body,
-          icon: '/favicon.png'
-        });
+      if ('Notification' in window && this.webNotificationPermission === 'granted') {
+        try {
+          new Notification(notification.title, {
+            body: notification.body,
+            icon: '/favicon.png',
+            badge: '/favicon.png',
+            tag: `notif-${Date.now()}`,
+            requireInteraction: false
+          });
+        } catch (error) {
+          console.error('Error showing web notification:', error);
+        }
       }
       return;
     }
 
+    // For native platforms
     try {
       await LocalNotifications.schedule({
         notifications: [
@@ -109,7 +139,9 @@ class PushNotificationService {
             id: Date.now(),
             schedule: { at: new Date(Date.now() + 100) },
             sound: 'beep.wav',
-            extra: notification.data
+            extra: notification.data,
+            smallIcon: 'ic_stat_icon_config_sample',
+            iconColor: '#3B82F6'
           }
         ]
       });
@@ -120,15 +152,15 @@ class PushNotificationService {
 
   private handleNotificationAction(data: any): void {
     // Handle different notification types
-    if (data?.type === 'low_stock') {
+    if (data?.type === 'low_stock' || data?.type === 'out_of_stock') {
       // Navigate to inventory
-      window.location.href = '/inventory';
+      console.log('Navigate to inventory');
     } else if (data?.type === 'overdue_invoice') {
       // Navigate to debts
-      window.location.href = '/debts';
+      console.log('Navigate to debts');
     } else if (data?.type === 'new_sale') {
       // Navigate to sales
-      window.location.href = '/sales';
+      console.log('Navigate to sales');
     }
   }
 
@@ -139,9 +171,20 @@ class PushNotificationService {
   async sendTestNotification(): Promise<void> {
     await this.showLocalNotification({
       title: 'اختبار الإشعارات',
-      body: 'تم تفعيل الإشعارات بنجاح!',
+      body: 'تم تفعيل الإشعارات بنجاح! 🎉',
       data: { type: 'test' }
     });
+  }
+
+  getWebPermissionStatus(): NotificationPermission {
+    return this.webNotificationPermission;
+  }
+
+  isSupported(): boolean {
+    if (Capacitor.isNativePlatform()) {
+      return true;
+    }
+    return 'Notification' in window;
   }
 }
 
