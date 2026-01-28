@@ -161,7 +161,7 @@ export const FinanceTab: React.FC = () => {
           <TrendingUp size={20} className="text-primary" />
           أداء الأسبوع اليومي
         </h3>
-        <div className="h-64">
+        <div className="h-40 md:h-64">
           {isMounted && (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.dailyData}>
