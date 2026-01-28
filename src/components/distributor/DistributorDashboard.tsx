@@ -13,7 +13,8 @@ import {
   Check,
   Loader2,
   ChevronDown,
-  Search
+  Search,
+  MessageCircle
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -155,8 +156,19 @@ const DistributorDashboard: React.FC = () => {
             <LogOut className={`w-5 h-5 ${loggingOut ? 'animate-spin' : ''}`} />
           </button>
           
-          {/* Center: AI Assistant */}
-          <AIAssistant />
+          {/* Center: Support & AI Assistant */}
+          <div className="flex items-center gap-2">
+            <a
+              href="https://wa.me/963947744162"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2.5 bg-green-500 rounded-full shadow-md text-white hover:bg-green-600 transition-all"
+              title="فريق الدعم"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </a>
+            <AIAssistant />
+          </div>
 
           {/* Right: Add Customer */}
           <button 

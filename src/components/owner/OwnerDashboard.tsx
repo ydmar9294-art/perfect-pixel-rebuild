@@ -14,7 +14,8 @@ import {
   Copy,
   CheckCircle2,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  MessageCircle
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { CURRENCY } from '@/constants';
@@ -168,8 +169,19 @@ const OwnerDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Right: Notification Center */}
-            <NotificationCenter />
+            {/* Right: Support & Notification */}
+            <div className="flex items-center gap-2">
+              <a
+                href="https://wa.me/963947744162"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 bg-green-500 rounded-full shadow-md text-white hover:bg-green-600 transition-all"
+                title="فريق الدعم"
+              >
+                <MessageCircle className="w-5 h-5" />
+              </a>
+              <NotificationCenter />
+            </div>
           </div>
         </div>
 
