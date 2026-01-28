@@ -19,9 +19,15 @@ interface Delivery {
   items?: DeliveryItem[];
 }
 
+interface DistributorOption {
+  id: string;
+  name: string;
+}
+
 export const DeliveriesTab: React.FC = () => {
   const { products, users, createDelivery, deliveries = [], addNotification } = useApp();
   const [showModal, setShowModal] = useState(false);
+  const [selectedDistributorId, setSelectedDistributorId] = useState('');
   const [distributorName, setDistributorName] = useState('');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<DeliveryItem[]>([]);
@@ -30,8 +36,16 @@ export const DeliveriesTab: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // الموزعين فقط
-  const distributors = users.filter(u => u.employeeType === EmployeeType.FIELD_AGENT);
+  // الموزعين من نفس المنشأة فقط (يتم تصفيتهم تلقائياً عبر RLS في useApp)
+  const distributors: DistributorOption[] = users
+    .filter(u => u.employeeType === EmployeeType.FIELD_AGENT)
+    .map(u => ({ id: u.id, name: u.name }));
+
+  const handleDistributorChange = (distributorId: string) => {
+    setSelectedDistributorId(distributorId);
+    const distributor = distributors.find(d => d.id === distributorId);
+    setDistributorName(distributor?.name || '');
+  };
 
   const addItem = () => {
     if (!selectedProduct || itemQuantity <= 0) {
@@ -82,7 +96,7 @@ export const DeliveriesTab: React.FC = () => {
     e.preventDefault();
     
     if (!distributorName.trim()) {
-      setError('يرجى إدخال اسم الموزع');
+      setError('يرجى اختيار الموزع');
       return;
     }
     
@@ -95,10 +109,16 @@ export const DeliveriesTab: React.FC = () => {
     setError('');
     
     try {
-      await createDelivery(distributorName.trim(), items, notes || undefined);
+      // تمرير distributor_id لربط المخزون بالموزع
+      await createDelivery(
+        distributorName.trim(), 
+        items, 
+        notes || undefined,
+        selectedDistributorId || undefined
+      );
       setShowModal(false);
       resetForm();
-      addNotification('تم تسليم البضاعة بنجاح', 'success');
+      addNotification('تم تسليم البضاعة بنجاح وتحديث مخزون الموزع', 'success');
     } catch (err: any) {
       console.error('Delivery error:', err);
       setError(err.message || 'حدث خطأ أثناء تسليم البضاعة');
@@ -108,6 +128,7 @@ export const DeliveriesTab: React.FC = () => {
   };
 
   const resetForm = () => {
+    setSelectedDistributorId('');
     setDistributorName('');
     setNotes('');
     setItems([]);
@@ -186,14 +207,14 @@ export const DeliveriesTab: React.FC = () => {
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mr-2">الموزع</label>
                 {distributors.length > 0 ? (
                   <select 
-                    value={distributorName} 
-                    onChange={(e) => setDistributorName(e.target.value)}
+                    value={selectedDistributorId} 
+                    onChange={(e) => handleDistributorChange(e.target.value)}
                     className="input-field"
                     disabled={loading}
                   >
                     <option value="">اختر الموزع...</option>
                     {distributors.map(d => (
-                      <option key={d.id} value={d.name}>{d.name}</option>
+                      <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
                   </select>
                 ) : (

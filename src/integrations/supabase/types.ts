@@ -915,10 +915,24 @@ export type Database = {
         }
         Returns: string
       }
-      create_delivery_rpc: {
-        Args: { p_distributor_name: string; p_items: Json; p_notes?: string }
-        Returns: string
-      }
+      create_delivery_rpc:
+        | {
+            Args: {
+              p_distributor_name: string
+              p_items: Json
+              p_notes?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_distributor_id?: string
+              p_distributor_name: string
+              p_items: Json
+              p_notes?: string
+            }
+            Returns: string
+          }
       create_purchase_return_rpc: {
         Args: { p_items: Json; p_reason?: string; p_supplier_name?: string }
         Returns: string

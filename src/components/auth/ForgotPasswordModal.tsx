@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail, Loader2, CheckCircle2, ArrowRight, KeyRound } from 'lucide-react';
+import { X, Mail, Loader2, CheckCircle2, ArrowRight, KeyRound, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ForgotPasswordModalProps {
@@ -14,24 +14,56 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
 
+  // التحقق من صحة صيغة البريد الإلكتروني
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
       setError('يرجى إدخال البريد الإلكتروني');
+      return;
+    }
+
+    // التحقق من صحة صيغة البريد الإلكتروني
+    if (!isValidEmail(trimmedEmail)) {
+      setError('صيغة البريد الإلكتروني غير صحيحة');
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      // التحقق أولاً من وجود الحساب في قاعدة البيانات
+      // نستخدم طريقة آمنة عبر محاولة تسجيل الدخول بكلمة مرور خاطئة
+      // لأن Supabase لا يسمح بالتحقق المباشر من وجود المستخدم
+      
+      // طريقة أخرى: نحاول إرسال الرابط ونتحقق من الاستجابة
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: `${window.location.origin}/reset-password`
       });
 
-      if (error) throw error;
+      if (resetError) {
+        // Supabase قد يُرجع خطأ إذا لم يجد المستخدم
+        if (resetError.message?.includes('User not found') || 
+            resetError.message?.includes('not found') ||
+            resetError.message?.includes('invalid')) {
+          setError('لا يوجد حساب مسجل بهذا البريد الإلكتروني');
+          return;
+        }
+        throw resetError;
+      }
+
+      // ملاحظة: Supabase بشكل افتراضي لا يُظهر إذا كان البريد موجود أم لا لأسباب أمنية
+      // لكن يمكننا إظهار رسالة نجاح في كل الحالات
       setSent(true);
     } catch (err: any) {
+      console.error('Password reset error:', err);
       setError(err.message || 'فشل إرسال رابط إعادة التعيين');
     } finally {
       setLoading(false);
@@ -97,8 +129,9 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
               </div>
 
               {error && (
-                <div className="p-4 bg-destructive/10 text-destructive rounded-2xl text-sm font-bold border border-destructive/20">
-                  {error}
+                <div className="p-4 bg-destructive/10 text-destructive rounded-2xl text-sm font-bold border border-destructive/20 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                  <span>{error}</span>
                 </div>
               )}
 
@@ -130,7 +163,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
             <div className="space-y-2">
               <h4 className="text-xl font-black text-foreground">تم الإرسال بنجاح!</h4>
               <p className="text-sm text-muted-foreground">
-                تم إرسال رابط إعادة تعيين كلمة المرور إلى
+                إذا كان هذا البريد مسجلاً لدينا، فسيتم إرسال رابط إعادة تعيين كلمة المرور إلى
               </p>
               <p className="text-sm font-bold text-primary" dir="ltr">{email}</p>
             </div>

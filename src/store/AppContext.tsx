@@ -63,7 +63,7 @@ interface AppContextType {
   updateLicenseStatus: (id: string, ownerId: string | null, status: LicenseStatus) => Promise<void>;
   makeLicensePermanent: (id: string, ownerId: string | null) => Promise<void>;
   addPurchase: (productId: string, quantity: number, unitPrice: number, supplierName?: string, notes?: string) => Promise<void>;
-  createDelivery: (distributorName: string, items: any[], notes?: string) => Promise<void>;
+  createDelivery: (distributorName: string, items: any[], notes?: string, distributorId?: string) => Promise<void>;
   createPurchaseReturn: (items: { product_id: string; product_name: string; quantity: number; unit_price: number }[], reason?: string, supplierName?: string) => Promise<void>;
 }
 
@@ -653,15 +653,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         addCustomer: async (n, p, loc) => {
           try {
-            await supabase.from('customers').insert({
+            const { error } = await supabase.from('customers').insert({
               name: n,
-              phone: p,
+              phone: p || null,
               location: loc || null,
               organization_id: organization?.id
             });
+            if (error) throw error;
             await refreshAllData();
             addNotification('تم إضافة الزبون بنجاح', 'success');
-          } catch (e) { handleError(e); }
+          } catch (e) { 
+            handleError(e); 
+            throw e;
+          }
         },
 
         addDistributor: async (n, p, r, t) => {
@@ -776,16 +780,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           } catch (e) { handleError(e); }
         },
 
-        createDelivery: async (distributorName, items, notes) => {
+        createDelivery: async (distributorName, items, notes, distributorId) => {
           try {
-            await supabase.rpc('create_delivery_rpc', {
+            const { error } = await supabase.rpc('create_delivery_rpc', {
               p_distributor_name: distributorName,
               p_items: items,
-              p_notes: notes
+              p_notes: notes,
+              p_distributor_id: distributorId || null
             });
+            if (error) throw error;
             await refreshAllData();
             addNotification('تم تسليم البضاعة وخصمها من المخزون', 'success');
-          } catch (e) { handleError(e); }
+          } catch (e) { 
+            handleError(e); 
+            throw e;
+          }
         },
 
         createPurchaseReturn: async (items, reason, supplierName) => {
