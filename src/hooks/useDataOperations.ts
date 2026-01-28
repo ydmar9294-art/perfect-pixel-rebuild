@@ -76,7 +76,9 @@ export const transformCustomer = (c: any): Customer => ({
   name: c.name,
   phone: c.phone,
   balance: Number(c.balance),
-  created_at: c.created_at
+  created_at: c.created_at,
+  created_by: c.created_by,
+  location: c.location
 });
 
 export const transformSale = (s: any): Sale => ({

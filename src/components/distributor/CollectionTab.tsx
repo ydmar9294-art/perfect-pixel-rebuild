@@ -12,7 +12,11 @@ import {
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
 
-const CollectionTab: React.FC = () => {
+interface CollectionTabProps {
+  selectedCustomer: import('@/types').Customer | null;
+}
+
+const CollectionTab: React.FC<CollectionTabProps> = ({ selectedCustomer }) => {
   const { sales, refreshAllData } = useApp();
   const [selectedSaleId, setSelectedSaleId] = useState<string>('');
   const [amount, setAmount] = useState<string>('');

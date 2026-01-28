@@ -9,14 +9,19 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 
-const CustomerDebtsTab: React.FC = () => {
-  const { customers, sales } = useApp();
+interface CustomerDebtsTabProps {
+  selectedCustomer: import('@/types').Customer | null;
+  myCustomers: import('@/types').Customer[];
+}
+
+const CustomerDebtsTab: React.FC<CustomerDebtsTabProps> = ({ selectedCustomer, myCustomers }) => {
+  const { sales } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'balance' | 'name'>('balance');
 
   // Filter and sort customers with debt
-  const debtCustomers = customers
+  const debtCustomers = myCustomers
     .filter(c => Number(c.balance) > 0)
     .filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {

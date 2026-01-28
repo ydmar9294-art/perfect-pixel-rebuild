@@ -653,11 +653,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         addCustomer: async (n, p, loc) => {
           try {
+            const { data: { user: authUser } } = await supabase.auth.getUser();
             const { error } = await supabase.from('customers').insert({
               name: n,
               phone: p || null,
               location: loc || null,
-              organization_id: organization?.id
+              organization_id: organization?.id,
+              created_by: authUser?.id || null
             });
             if (error) throw error;
             await refreshAllData();
