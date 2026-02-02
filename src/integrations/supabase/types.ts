@@ -432,8 +432,11 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string | null
+          email_verified: boolean | null
           employee_type: Database["public"]["Enums"]["employee_type"] | null
           full_name: string
+          google_id: string | null
           id: string
           license_key: string | null
           organization_id: string | null
@@ -443,8 +446,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          email?: string | null
+          email_verified?: boolean | null
           employee_type?: Database["public"]["Enums"]["employee_type"] | null
           full_name: string
+          google_id?: string | null
           id: string
           license_key?: string | null
           organization_id?: string | null
@@ -454,8 +460,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          email?: string | null
+          email_verified?: boolean | null
           employee_type?: Database["public"]["Enums"]["employee_type"] | null
           full_name?: string
+          google_id?: string | null
           id?: string
           license_key?: string | null
           organization_id?: string | null
@@ -916,6 +925,26 @@ export type Database = {
         Args: { p_activation_code: string; p_user_id: string }
         Returns: undefined
       }
+      activate_employee_oauth: {
+        Args: {
+          p_activation_code: string
+          p_email: string
+          p_full_name: string
+          p_google_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      activate_license_oauth: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_google_id: string
+          p_license_key: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       add_collection_rpc: {
         Args: { p_amount: number; p_notes?: string; p_sale_id: string }
         Returns: string
@@ -940,6 +969,7 @@ export type Database = {
         Returns: string
       }
       check_login_rate_limit: { Args: { p_ip_hash: string }; Returns: boolean }
+      check_oauth_profile: { Args: { p_user_id: string }; Returns: Json }
       create_delivery_rpc:
         | {
             Args: {

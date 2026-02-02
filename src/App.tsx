@@ -5,186 +5,19 @@ import { Layout } from '@/components/Layout';
 import { ToastManager } from '@/components/ToastManager';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  ShieldCheck, Eye, EyeOff, Loader2, Store,
-  Key, UserPlus, LogOut, Receipt, Wallet,
-  LayoutDashboard, TrendingUp, Box, Users,
-  Copy, CheckCircle2, X, Plus,
+  ShieldCheck, Loader2,
+  Key, UserPlus, LogOut,
+  Copy, CheckCircle2, Plus,
   Clock, Lock, Unlock, Activity,
-  Calculator, DollarSign, AlertCircle
+  Calculator
 } from 'lucide-react';
 import { CURRENCY } from '@/constants';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer 
-} from 'recharts';
-import { LicenseStatus, Product } from '@/types';
-import { FinanceTab } from '@/components/owner/FinanceTab';
-import { EmployeeKPIs } from '@/components/owner/EmployeeKPIs';
-import { InventoryTab } from '@/components/owner/InventoryTab';
+import { LicenseStatus } from '@/types';
 import DistributorDashboard from '@/components/distributor/DistributorDashboard';
 import AccountantDashboard from '@/components/accountant/AccountantDashboard';
 import OwnerDashboard from '@/components/owner/OwnerDashboard';
-import UnifiedActivation from '@/components/auth/UnifiedActivation';
+import AuthFlow from '@/components/auth/AuthFlow';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-
-// ==========================================
-// LOGIN VIEW
-// ==========================================
-import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
-
-const LoginView: React.FC = () => {
-  const { login, isLoading, addNotification } = useApp();
-  const [mode, setMode] = useState<'login' | 'activate'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [localLoading, setLocalLoading] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [tabSwitching, setTabSwitching] = useState(false);
-
-  const handleTabSwitch = (newMode: 'login' | 'activate') => {
-    if (mode === newMode) return;
-    setTabSwitching(true);
-    setTimeout(() => {
-      setMode(newMode);
-      setTimeout(() => setTabSwitching(false), 100);
-    }, 150);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      addNotification("يرجى إدخال كافة البيانات", "warning");
-      return;
-    }
-
-    setLocalLoading(true);
-    try {
-      // Unified login - role is resolved internally after authentication
-      await login(email.trim(), password.trim());
-    } catch (err: any) {
-      addNotification(err.message || "فشلت عملية الدخول", "error");
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex flex-col font-tajawal relative bg-background" dir="rtl">
-      {/* Header Section */}
-      <div className="bg-slate-900 pt-14 pb-16 px-6 relative overflow-hidden flex flex-col items-center shrink-0">
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
-        
-        {/* Logo */}
-        <div className="w-20 h-20 rounded-[1.8rem] flex items-center justify-center shadow-2xl mb-5 z-10 border-4 border-white/5 animate-float bg-gradient-to-br from-blue-500 to-indigo-600">
-          <ShieldCheck size={40} className="text-white" />
-        </div>
-        
-        {/* Title */}
-        <h1 className="text-3xl font-black text-white mb-2 tracking-tight z-10">
-          النظام الذكي
-        </h1>
-        
-        {/* Subtitle */}
-        <p className="text-white/50 text-[11px] font-bold z-10 text-center leading-relaxed max-w-[200px]">
-          الخاص بإدارة البيع والتوزيع للمنشآت الصغيرة
-        </p>
-      </div>
-
-      {/* Card Section */}
-      <div className="max-w-md w-full mx-auto px-6 -mt-8 z-20 flex-1 flex flex-col pb-24">
-        <div className="bg-card rounded-[2.5rem] shadow-xl border overflow-hidden">
-          
-          {/* Tab Switcher */}
-          <div className={`flex bg-muted p-1.5 m-4 rounded-2xl border tab-container-animated ${tabSwitching ? 'switching' : ''}`}>
-            <button 
-              onClick={() => handleTabSwitch('login')} 
-              className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
-                mode === 'login' 
-                  ? 'bg-card text-foreground shadow-md' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              تسجيل الدخول
-            </button>
-            <button 
-              onClick={() => handleTabSwitch('activate')} 
-              className={`flex-1 py-3.5 rounded-xl font-black text-xs transition-all duration-300 ${
-                mode === 'activate' 
-                  ? 'bg-card text-foreground shadow-md' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              تفعيل حساب جديد
-            </button>
-          </div>
-          
-          {/* Content */}
-          <div className="tab-content-enter" key={mode}>
-            {mode === 'login' ? (
-              <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
-                <input 
-                  type="email" 
-                  placeholder="البريد الإلكتروني" 
-                  value={email} 
-                  disabled={localLoading}
-                  className="input-field" 
-                  onChange={e => setEmail(e.target.value)} 
-                />
-                <div className="relative">
-                  <input 
-                    type={showPassword ? "text" : "password"} 
-                    placeholder="كلمة المرور" 
-                    value={password} 
-                    disabled={localLoading}
-                    className="input-field" 
-                    onChange={e => setPassword(e.target.value)} 
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-                <button 
-                  type="submit" 
-                  disabled={localLoading || isLoading} 
-                  className="w-full py-5 bg-foreground text-background rounded-2xl font-black text-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl"
-                >
-                  {(localLoading || isLoading) ? <Loader2 size={24} className="animate-spin" /> : 'دخول النظام'}
-                </button>
-              </form>
-            ) : (
-              <div className="px-6 pb-6">
-                <UnifiedActivation />
-              </div>
-            )}
-          </div>
-          
-          {/* Forgot Password Link */}
-          {mode === 'login' && (
-            <div className="px-8 pb-5">
-              <button 
-                type="button" 
-                onClick={() => setShowForgotPassword(true)}
-                disabled={localLoading}
-                className="w-full text-xs font-bold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-2"
-              >
-                <Key size={14} />
-                نسيت كلمة المرور؟
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Forgot Password Modal */}
-      <ForgotPasswordModal 
-        isOpen={showForgotPassword} 
-        onClose={() => setShowForgotPassword(false)}
-        initialEmail={email}
-      />
-    </div>
-  );
-};
 
 // ==========================================
 // DEVELOPER HUB
@@ -288,7 +121,6 @@ const DeveloperHub: React.FC = () => {
     </div>
   );
 };
-// OwnerDashboard is now imported from @/components/owner/OwnerDashboard
 
 const KpiCard: React.FC<any> = ({ label, value, icon }) => (
   <div className="kpi-card text-end">
@@ -300,185 +132,29 @@ const KpiCard: React.FC<any> = ({ label, value, icon }) => (
   </div>
 );
 
-
-// ==========================================
-// DISTRIBUTOR VIEW
-// ==========================================
-const DistributorView: React.FC = () => {
-  const { user, customers, sales, addCustomer, submitInvoice, submitPayment, addNotification, logout } = useApp();
-  const [activeMode, setActiveMode] = useState<'invoice' | 'payment' | 'customers'>('invoice');
-  const [selectedCust, setSelectedCust] = useState('');
-  const [selectedSale, setSelectedSale] = useState('');
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAddCustomer, setShowAddCustomer] = useState(false);
-
-  const isReadOnly = user?.employeeType === EmployeeType.ACCOUNTANT;
-
-  const handleInvoice = async () => {
-    if (isReadOnly || !selectedCust || isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      const customer = customers.find(c => c.id === selectedCust);
-      await submitInvoice({ customerId: selectedCust, customerName: customer?.name || 'غير معروف', grandTotal: 0, items: [], paymentType: 'CASH' });
-      setIsSuccess(true);
-    } catch (e: any) {
-      addNotification("خطأ في إنشاء الفاتورة", "error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handlePayment = async () => {
-    if (isReadOnly || !selectedSale || paymentAmount <= 0 || isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      await submitPayment({ saleId: selectedSale, amount: paymentAmount, notes: 'تحصيل ميداني' });
-      setIsSuccess(true);
-    } catch (e: any) {
-      addNotification("خطأ في تسجيل الدفعة", "error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (isSuccess) return (
-    <div className="flex flex-col items-center justify-center p-10 text-center animate-zoom-in">
-      <CheckCircle2 size={64} className="text-success mb-4" />
-      <h2 className="text-2xl font-black">تمت العملية بنجاح</h2>
-      <button onClick={() => setIsSuccess(false)} className="mt-6 bg-foreground text-background px-8 py-3 rounded-xl font-bold">متابعة العمل</button>
-    </div>
-  );
-
-  return (
-    <div className="max-w-xl mx-auto space-y-6 animate-fade-in" dir="rtl">
-      <div className="flex items-center justify-between bg-card px-5 py-4 rounded-[1.8rem] shadow-sm border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground"><Calculator size={20} /></div>
-          <div>
-            <h1 className="text-lg font-black text-foreground leading-none">{isReadOnly ? 'المحاسب المالي' : 'الموزع الميداني'} ({user?.name || 'المستخدم'})</h1>
-            <p className="text-muted-foreground text-[9px] font-bold mt-1">{isReadOnly ? 'وضع العرض فقط' : 'إنشاء فواتير وتحصيل'}</p>
-          </div>
-        </div>
-        <button onClick={logout} className="w-10 h-10 flex items-center justify-center bg-destructive/10 text-destructive rounded-xl active:scale-90"><LogOut size={20} /></button>
-      </div>
-
-      <div className="flex bg-card p-2 rounded-2xl shadow-sm border gap-2 overflow-x-auto">
-        <button onClick={() => setActiveMode('invoice')} className={`flex-1 py-3 rounded-xl font-black text-xs ${activeMode === 'invoice' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>فواتير</button>
-        <button onClick={() => setActiveMode('payment')} className={`flex-1 py-3 rounded-xl font-black text-xs ${activeMode === 'payment' ? 'bg-success text-success-foreground' : 'text-muted-foreground'}`}>تحصيل</button>
-        <button onClick={() => setActiveMode('customers')} className={`flex-1 py-3 rounded-xl font-black text-xs ${activeMode === 'customers' ? 'bg-foreground text-background' : 'text-muted-foreground'}`}>الزبائن</button>
-      </div>
-
-      <div className="bg-card p-6 rounded-[2rem] border shadow-sm space-y-4">
-        <label className="text-[10px] font-black text-muted-foreground uppercase mr-2">اختيار الزبون</label>
-        <select value={selectedCust} onChange={e => { setSelectedCust(e.target.value); setSelectedSale(''); }} className="input-field">
-          <option value="">-- ابحث عن زبون --</option>
-          {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-
-        {activeMode === 'payment' && selectedCust && (
-          <>
-            <label className="text-[10px] font-black text-muted-foreground uppercase mr-2">اختيار الفاتورة</label>
-            <select value={selectedSale} onChange={e => setSelectedSale(e.target.value)} className="input-field">
-              <option value="">-- اختر الفاتورة --</option>
-              {sales.filter(s => s.customer_id === selectedCust && !s.isVoided).map(s => (
-                <option key={s.id} value={s.id}>فاتورة #{s.id.slice(0,8)} - القيمة: {s.grandTotal}</option>
-              ))}
-            </select>
-            <label className="text-[10px] font-black text-muted-foreground uppercase mr-2">المبلغ</label>
-            <input type="number" placeholder="0" className="input-field" value={paymentAmount || ''} onChange={e => setPaymentAmount(Number(e.target.value))} />
-          </>
-        )}
-
-        {activeMode === 'customers' && !isReadOnly && (
-          <button onClick={() => setShowAddCustomer(true)} className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black flex items-center justify-center gap-2">
-            <Plus size={18} /> إضافة زبون جديد
-          </button>
-        )}
-      </div>
-
-      {isReadOnly ? (
-        <div className="bg-warning/10 p-6 rounded-[1.5rem] border border-warning/20 flex items-center gap-4 text-warning">
-          <AlertCircle />
-          <p className="text-xs font-bold leading-relaxed">أنت في وضع "المحاسب المالي". يمكنك استعراض البيانات فقط.</p>
-        </div>
-      ) : (
-        <>
-          {activeMode === 'invoice' && (
-            <button onClick={handleInvoice} disabled={isSubmitting || !selectedCust} className="w-full py-5 bg-primary text-primary-foreground rounded-[1.5rem] font-black shadow-xl disabled:opacity-50 active:scale-95 transition-all">
-              {isSubmitting ? 'جاري الاعتماد...' : 'اعتماد فاتورة جديدة'}
-            </button>
-          )}
-          {activeMode === 'payment' && (
-            <button onClick={handlePayment} disabled={isSubmitting || !selectedSale || paymentAmount <= 0} className="w-full py-5 bg-success text-success-foreground rounded-[1.5rem] font-black shadow-xl disabled:opacity-50 active:scale-95 transition-all">
-              {isSubmitting ? 'جاري تسجيل الدفعة...' : 'تسجيل التحصيل المالي'}
-            </button>
-          )}
-        </>
-      )}
-
-      {showAddCustomer && (
-        <div className="modal-overlay">
-          <div className="bg-card rounded-[2.5rem] w-full max-w-md p-8 space-y-6 animate-zoom-in">
-            <h3 className="text-xl font-black">إضافة زبون جديد</h3>
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              const fd = new FormData(e.currentTarget);
-              await addCustomer(fd.get('name') as string, fd.get('phone') as string);
-              setShowAddCustomer(false);
-            }} className="space-y-4">
-              <input name="name" required placeholder="اسم الزبون" className="input-field" />
-              <input name="phone" placeholder="رقم الهاتف" className="input-field" />
-              <button type="submit" className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-black">إضافة</button>
-              <button type="button" onClick={() => setShowAddCustomer(false)} className="w-full py-4 bg-muted text-muted-foreground rounded-xl font-black">إلغاء</button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// AccountantView and DistributorView are now imported from their respective components
-const StatCard = ({ label, val, icon, isCount }: any) => (
-  <div className="bg-card p-5 rounded-2xl border flex items-center gap-4">
-    <div className="p-3 rounded-xl bg-primary/10 text-primary">{icon}</div>
-    <div>
-      <p className="text-[10px] font-black text-muted-foreground uppercase">{label}</p>
-      <p className="text-lg font-black">{val.toLocaleString()} {!isCount && CURRENCY}</p>
-    </div>
-  </div>
-);
-
 // ==========================================
 // VIEW MANAGER
 // ==========================================
 const ViewManager: React.FC = () => {
-  const { user, organization, logout } = useApp();
-  if (!user) return <LoginView />;
-
-  if (user.role === UserRole.OWNER && !organization) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center" dir="rtl">
-        <div className="max-w-md space-y-6 animate-zoom-in">
-          <div className="w-24 h-24 bg-destructive rounded-[2.5rem] flex items-center justify-center text-white mx-auto shadow-2xl">
-            <Store size={48} />
-          </div>
-          <h2 className="text-3xl font-black text-white">لا توجد منشأة نشطة</h2>
-          <p className="text-slate-400 font-bold text-lg leading-relaxed">لم يتم ربط حسابك بأي منشأة تجارية.</p>
-          <button onClick={logout} className="w-full py-4 bg-white/10 text-white rounded-2xl font-black mt-8 active:scale-95 transition-all">تسجيل الخروج</button>
-        </div>
-      </div>
-    );
-  }
-
-  switch (user.role) {
-    case UserRole.OWNER: return <OwnerDashboard />;
+  const { role, user } = useApp();
+  
+  // Route based on role
+  switch (role) {
+    case UserRole.DEVELOPER:
+      return <DeveloperHub />;
+    case UserRole.OWNER:
+      return <OwnerDashboard />;
     case UserRole.EMPLOYEE:
-      return user.employeeType === EmployeeType.ACCOUNTANT ? <AccountantDashboard /> : <DistributorDashboard />;
-    case UserRole.DEVELOPER: return <DeveloperHub />;
-    default: return <OwnerDashboard />;
+      if (user?.employeeType === EmployeeType.ACCOUNTANT) {
+        return <AccountantDashboard />;
+      }
+      return <DistributorDashboard />;
+    default:
+      return (
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">لا يمكن تحديد نوع المستخدم</p>
+        </div>
+      );
   }
 };
 
@@ -486,17 +162,16 @@ const ViewManager: React.FC = () => {
 // MAIN CONTENT
 // ==========================================
 const MainContent: React.FC = () => {
-  const { user, isLoading } = useApp();
+  const { user, isLoading, refreshAuth, needsActivation } = useApp();
   
   // Initialize push notifications
-  const { isInitialized: pushInitialized } = usePushNotifications();
-
-  // إعادة المحاولة تلقائياً بعد 10 ثواني إذا لم يكتمل التحميل
-  React.useEffect(() => {
+  usePushNotifications();
+  
+  // Loading timeout detection
+  useEffect(() => {
     if (isLoading) {
       const timer = setTimeout(() => {
-        console.log('[Auto-Retry] Reloading page due to extended loading time...');
-        window.location.reload();
+        console.warn('[App] Loading timeout - potential stuck state');
       }, 10000);
       return () => clearTimeout(timer);
     }
@@ -510,10 +185,20 @@ const MainContent: React.FC = () => {
     </div>
   );
 
+  // Show auth flow if not logged in or needs activation
+  if (!user || needsActivation) {
+    return (
+      <>
+        <ToastManager />
+        <AuthFlow onAuthComplete={refreshAuth} />
+      </>
+    );
+  }
+
   return (
     <>
       <ToastManager />
-      {!user ? <LoginView /> : <Layout><ViewManager /></Layout>}
+      <Layout><ViewManager /></Layout>
     </>
   );
 };
