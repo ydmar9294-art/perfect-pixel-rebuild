@@ -260,6 +260,30 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          attempted_at: string
+          email_hash: string | null
+          id: string
+          ip_hash: string
+          success: boolean
+        }
+        Insert: {
+          attempted_at?: string
+          email_hash?: string | null
+          id?: string
+          ip_hash: string
+          success?: boolean
+        }
+        Update: {
+          attempted_at?: string
+          email_hash?: string | null
+          id?: string
+          ip_hash?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
       organization_users: {
         Row: {
           created_at: string
@@ -915,6 +939,7 @@ export type Database = {
         }
         Returns: string
       }
+      check_login_rate_limit: { Args: { p_ip_hash: string }; Returns: boolean }
       create_delivery_rpc:
         | {
             Args: {
@@ -963,10 +988,15 @@ export type Database = {
         }
         Returns: string
       }
+      record_login_attempt: {
+        Args: { p_email_hash: string; p_ip_hash: string; p_success: boolean }
+        Returns: undefined
+      }
       reverse_payment_rpc: {
         Args: { p_payment_id: string; p_reason: string }
         Returns: undefined
       }
+      secure_generate_license_key: { Args: never; Returns: string }
       use_license: {
         Args: { p_license_key: string; p_user_id: string }
         Returns: undefined
