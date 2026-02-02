@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole, User, Product, License, LicenseStatus, EmployeeType, Organization, Customer, Sale, Payment, Notification } from '@/types';
-import { resolveUserProfile, checkDeveloperExists as checkDevExists } from '@/hooks/useAuthOperations';
+import { resolveUserProfile } from '@/hooks/useAuthOperations';
 import { 
   Purchase, Delivery, PendingEmployee, 
   fetchOrganizationData, fetchDeveloperData,
@@ -26,7 +26,6 @@ interface AppContextType {
   role: UserRole | null;
   organization: Organization | null;
   isLoading: boolean;
-  developerExists: boolean;
 
   products: Product[];
   customers: Customer[];
@@ -42,7 +41,6 @@ interface AppContextType {
   logout: () => Promise<void>;
   signUp: (email: string, pass: string, code: string) => Promise<void>;
   signUpEmployee: (email: string, pass: string, code: string) => Promise<void>;
-  loginDeveloper: (email: string, pass: string) => Promise<boolean>;
   refreshAllData: () => Promise<void>;
 
   notifications: Notification[];
@@ -86,7 +84,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [role, setRole] = useState<UserRole | null>(null);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [developerExists, setDeveloperExists] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -116,15 +113,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const msg = extractErrorMessage(err);
     addNotification(msg, 'error');
   }, [addNotification]);
-
-  // ============================================
-  // Developer Check
-  // ============================================
-
-  const checkDeveloperExists = useCallback(async () => {
-    const exists = await checkDevExists();
-    setDeveloperExists(exists);
-  }, []);
 
   // ============================================
   // Data Refresh - with deduplication and debouncing
@@ -189,8 +177,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // ============================================
 
   useEffect(() => {
-    checkDeveloperExists();
-    
     if (initializingAuth.current) return;
     initializingAuth.current = true;
     
@@ -259,7 +245,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       clearTimeout(timeoutId);
       listener.subscription.unsubscribe();
     };
-  }, [checkDeveloperExists]);
+  }, []);
 
   // ============================================
   // Login - with mutex for race condition prevention
@@ -422,135 +408,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // ============================================
-  // Developer Login
-  // ============================================
-
-  const loginDeveloper = async (email: string, pass: string): Promise<boolean> => {
-    return authMutex.withLock(async () => {
-      isInternalAuthOp.current = true;
-      setIsLoading(true);
-      
-      try {
-        console.log('[Auth] loginDeveloper started for:', email);
-        
-        const devCheck = await supabase.from('user_roles').select('id').eq('role', 'DEVELOPER').limit(1);
-        const devExists = (devCheck.data?.length || 0) > 0;
-
-        if (!devExists) {
-          // No developer in system
-          const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password: pass
-          });
-
-          let userId: string | null = null;
-
-          if (loginError) {
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-              email: email.trim(),
-              password: pass
-            });
-
-            if (signUpError) {
-              if (signUpError.message?.includes('already registered') || signUpError.code === 'user_already_exists') {
-                addNotification('خطأ في البريد أو كلمة المرور', 'error');
-                return false;
-              } else {
-                throw signUpError;
-              }
-            } else {
-              userId = signUpData.user?.id || null;
-            }
-          } else {
-            userId = loginData.user?.id || null;
-          }
-
-          if (userId) {
-            const { data: existingProfile } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('id', userId)
-              .maybeSingle();
-              
-            if (!existingProfile) {
-              await supabase.from('profiles').insert({
-                id: userId,
-                full_name: 'المطور الرئيسي',
-                role: 'DEVELOPER'
-              });
-            } else {
-              await supabase.from('profiles').update({
-                role: 'DEVELOPER'
-              }).eq('id', userId);
-            }
-
-            const { error: roleError } = await supabase.from('user_roles').insert({
-              user_id: userId,
-              role: 'DEVELOPER'
-            });
-            
-            if (roleError && !roleError.message?.includes('duplicate')) {
-              throw roleError;
-            }
-
-            addNotification('تم تفعيل حساب المطور بنجاح', 'success');
-            await resolveProfile(userId);
-            setDeveloperExists(true);
-            return true;
-          }
-        } else {
-          // Developer already exists
-          const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password: pass
-          });
-          
-          if (loginError) {
-            addNotification('بيانات المطور غير صحيحة', 'error');
-            return false;
-          }
-          
-          if (loginData.user) {
-            const { data: roles } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', loginData.user.id)
-              .eq('role', 'DEVELOPER')
-              .limit(1);
-            
-            if (!roles || roles.length === 0) {
-              const { data: existingProfile } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('id', loginData.user.id)
-                .maybeSingle();
-              
-              await supabase.auth.signOut();
-              
-              if (!existingProfile) {
-                addNotification('هذا الحساب غير مربوط بالنظام. يرجى استخدام كود التفعيل.', 'error');
-              } else {
-                addNotification('يوجد مطور مسجل بالفعل. لا يمكن إضافة مطور آخر.', 'error');
-              }
-              return false;
-            }
-            
-            await resolveProfile(loginData.user.id);
-            return true;
-          }
-        }
-        return false;
-      } catch (err) {
-        handleError(err);
-        return false;
-      } finally {
-        setIsLoading(false);
-        isInternalAuthOp.current = false;
-      }
-    });
-  };
-
-  // ============================================
   // Auto-refresh data when organization/role changes
   // ============================================
 
@@ -571,7 +428,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         role,
         organization,
         isLoading,
-        developerExists,
 
         products,
         customers,
@@ -587,7 +443,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         logout,
         signUp,
         signUpEmployee,
-        loginDeveloper,
         refreshAllData,
         notifications,
         addNotification,
