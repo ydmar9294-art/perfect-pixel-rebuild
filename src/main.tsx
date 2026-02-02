@@ -4,6 +4,10 @@ import App from "./App.tsx";
 import ResetPasswordPage from "./components/auth/ResetPasswordPage.tsx";
 import "./index.css";
 import { AppProvider } from "@/store/AppContext";
+import { applySecurityMeta } from "@/utils/securityHeaders";
+
+// Apply security headers on app load
+applySecurityMeta();
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
