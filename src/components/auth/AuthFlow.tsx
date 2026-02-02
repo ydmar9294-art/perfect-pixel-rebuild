@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ShieldCheck, Loader2, AlertCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { getCachedAuth, clearAuthCache } from '@/lib/authCache';
+import { checkAuthStatus } from '@/hooks/useAuthOperations';
 import GoogleAuthButton from './GoogleAuthButton';
 import LicenseActivation from './LicenseActivation';
 
@@ -37,41 +39,36 @@ const AuthFlow: React.FC<AuthFlowProps> = ({ onAuthComplete }) => {
         return;
       }
 
-      // Check profile status via RPC
-      const { data, error } = await supabase.rpc('check_oauth_profile', {
-        p_user_id: userId
-      });
+      // Use optimized auth-status endpoint
+      const status = await checkAuthStatus();
 
-      if (error) {
-        console.error('[AuthFlow] Profile check error:', error);
-        throw error;
-      }
-
-      const result = data as {
-        exists: boolean;
-        needs_activation: boolean;
-        access_denied?: boolean;
-        reason?: string;
-        message?: string;
-        role?: string;
-      };
-
-      if (result.access_denied) {
-        setAuthState({
-          type: 'access_denied',
-          reason: result.reason || 'UNKNOWN',
-          message: result.message || 'تم رفض الوصول'
-        });
-        return;
-      }
-
-      if (!result.exists || result.needs_activation) {
+      if (!status.authenticated) {
         setAuthState({
           type: 'needs_activation',
           userId,
           googleId,
           email,
           fullName
+        });
+        return;
+      }
+
+      if (status.access_denied) {
+        setAuthState({
+          type: 'access_denied',
+          reason: status.reason || 'UNKNOWN',
+          message: status.message || 'تم رفض الوصول'
+        });
+        return;
+      }
+
+      if (status.needs_activation) {
+        setAuthState({
+          type: 'needs_activation',
+          userId,
+          googleId: status.google_id || googleId,
+          email: status.email || email,
+          fullName: status.full_name || fullName
         });
         return;
       }
@@ -89,13 +86,24 @@ const AuthFlow: React.FC<AuthFlowProps> = ({ onAuthComplete }) => {
 
   // Listen for auth state changes
   useEffect(() => {
+    // Check cache first for fast path
+    const cached = getCachedAuth();
+    
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[AuthFlow] Auth event:', event);
       
       if (event === 'SIGNED_IN' && session?.user) {
+        // If we have valid cache for this user, skip profile check
+        if (cached && cached.userId === session.user.id) {
+          console.log('[AuthFlow] Cache hit - fast completing auth');
+          onAuthComplete();
+          return;
+        }
+        
         setAuthState({ type: 'loading' });
         await checkUserProfile(session.user.id, session.user);
       } else if (event === 'SIGNED_OUT') {
+        clearAuthCache();
         setAuthState({ type: 'initial' });
       }
     });
@@ -104,6 +112,13 @@ const AuthFlow: React.FC<AuthFlowProps> = ({ onAuthComplete }) => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        // Fast path with cache
+        if (cached && cached.userId === session.user.id) {
+          console.log('[AuthFlow] Initial cache hit - fast completing auth');
+          onAuthComplete();
+          return;
+        }
+        
         setAuthState({ type: 'loading' });
         await checkUserProfile(session.user.id, session.user);
       }
@@ -114,9 +129,10 @@ const AuthFlow: React.FC<AuthFlowProps> = ({ onAuthComplete }) => {
     return () => {
       listener.subscription.unsubscribe();
     };
-  }, [checkUserProfile]);
+  }, [checkUserProfile, onAuthComplete]);
 
   const handleLogout = async () => {
+    clearAuthCache();
     await supabase.auth.signOut();
     setAuthState({ type: 'initial' });
     setAuthError('');
