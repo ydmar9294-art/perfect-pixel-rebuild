@@ -453,12 +453,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addCustomer: async (name, phone, location) => {
           try {
             if (!organization?.id) throw new Error('لا توجد منشأة');
-            await supabase.from('customers').insert({
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            if (!currentUser) throw new Error('غير مسجل الدخول');
+            
+            const { error } = await supabase.from('customers').insert({
               name,
               phone,
               location,
-              organization_id: organization.id
+              organization_id: organization.id,
+              created_by: currentUser.id
             });
+            
+            if (error) throw error;
+            
+            addNotification('تم إضافة الزبون بنجاح', 'success');
             await refreshAllData();
           } catch (e) { handleError(e); }
         },

@@ -4,8 +4,10 @@ import { useApp } from '@/store/AppContext';
 import { pushNotificationService } from '@/services/pushNotifications';
 
 export const useRealtimeNotifications = () => {
-  const { user, products, sales, addNotification } = useApp();
+  const { user, products, sales, addNotification, role } = useApp();
+  // Use user-scoped alert tracking to isolate notifications per user
   const processedAlerts = useRef<Set<string>>(new Set());
+  const lastUserId = useRef<string | null>(null);
 
   // Helper to send both in-app and push notification
   const sendNotification = async (
@@ -90,9 +92,19 @@ export const useRealtimeNotifications = () => {
     });
   };
 
-  // Initial check on mount
+  // Clear processed alerts when user changes (user isolation)
   useEffect(() => {
-    if (user) {
+    if (user?.id !== lastUserId.current) {
+      // User changed - clear all processed alerts to reset notifications
+      processedAlerts.current.clear();
+      lastUserId.current = user?.id || null;
+      console.log('[Notifications] User changed - clearing alert history');
+    }
+  }, [user?.id]);
+
+  // Initial check on mount - only for Owner role (not distributors)
+  useEffect(() => {
+    if (user && role === 'OWNER') {
       // Delay initial checks to avoid overwhelming the user
       const timer = setTimeout(() => {
         checkLowStock();
@@ -100,14 +112,19 @@ export const useRealtimeNotifications = () => {
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [user, products.length, sales.length]);
+  }, [user, role, products.length, sales.length]);
 
-  // Setup realtime subscriptions
+  // Setup realtime subscriptions - scoped to user's role
   useEffect(() => {
     if (!user) return;
 
+    // Only owners get stock notifications
+    if (role !== 'OWNER') {
+      return;
+    }
+
     const channel = supabase
-      .channel('realtime-notifications')
+      .channel(`realtime-notifications-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -118,6 +135,11 @@ export const useRealtimeNotifications = () => {
         (payload) => {
           if (payload.eventType === 'UPDATE') {
             const product = payload.new as any;
+            // Create unique key per user + product to prevent cross-user notifications
+            const alertKey = `${user.id}_stock_${product.id}_${product.stock}`;
+            if (processedAlerts.current.has(alertKey)) return;
+            processedAlerts.current.add(alertKey);
+            
             if (product.stock <= product.min_stock && product.stock > 0) {
               sendNotification(
                 `⚠️ تحديث المخزون: ${product.name} أصبح ${product.stock} فقط`, 
@@ -145,6 +167,13 @@ export const useRealtimeNotifications = () => {
         },
         (payload) => {
           const sale = payload.new as any;
+          // Only notify owner about sales, and only if they didn't create it
+          if (sale.created_by === user.id) return; // Don't notify about own sales
+          
+          const alertKey = `${user.id}_sale_${sale.id}`;
+          if (processedAlerts.current.has(alertKey)) return;
+          processedAlerts.current.add(alertKey);
+          
           if (sale.remaining > 0) {
             sendNotification(
               `📝 فاتورة جديدة آجلة: ${sale.customer_name} - ${sale.remaining.toLocaleString()} ل.س`, 
@@ -160,7 +189,7 @@ export const useRealtimeNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, addNotification]);
+  }, [user?.id, role, addNotification]);
 
   return {
     checkLowStock,
