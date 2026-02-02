@@ -158,8 +158,13 @@ const OwnerDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <div className="max-w-lg mx-auto">
         {/* Top Header */}
-        <div className="bg-gray-50 pt-4 px-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-gray-50 pt-4 px-4 relative">
+          {/* Notification Center - Top Right Corner */}
+          <div className="absolute top-2 left-2">
+            <NotificationCenter />
+          </div>
+
+          <div className="flex items-center justify-between mb-4 pt-2">
             {/* Right (RTL): Action Buttons */}
             <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-2 py-1.5 rounded-2xl shadow-md">
               <AIAssistant />
@@ -173,8 +178,6 @@ const OwnerDashboard: React.FC = () => {
               >
                 <MessageCircle className="w-4 h-4" />
               </a>
-              <div className="w-px h-6 bg-gray-200" />
-              <NotificationCenter />
             </div>
 
             {/* Center: User Info */}
