@@ -7,10 +7,12 @@ import {
   Loader2,
   X,
   AlertCircle,
-  DollarSign
+  DollarSign,
+  Printer
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
+import InvoicePrint from './InvoicePrint';
 
 interface CollectionTabProps {
   selectedCustomer: import('@/types').Customer | null;
@@ -25,6 +27,15 @@ const CollectionTab: React.FC<CollectionTabProps> = ({ selectedCustomer }) => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [searchSale, setSearchSale] = useState('');
+  
+  // Print state
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [lastCollectionData, setLastCollectionData] = useState<{
+    id: string;
+    customerName: string;
+    amount: number;
+    notes?: string;
+  } | null>(null);
 
   // Filter sales with remaining balance
   const unpaidSales = sales.filter(s => !s.isVoided && Number(s.remaining) > 0);
@@ -60,17 +71,31 @@ const CollectionTab: React.FC<CollectionTabProps> = ({ selectedCustomer }) => {
 
       if (rpcError) throw rpcError;
 
+      // Store collection data for printing
+      setLastCollectionData({
+        id: crypto.randomUUID(),
+        customerName: selectedSale?.customerName || '',
+        amount: numAmount,
+        notes: notes || undefined
+      });
+
       setSelectedSaleId('');
       setAmount('');
       setNotes('');
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
+      setShowPrintModal(true); // Show print modal after success
       await refreshAllData();
     } catch (err: any) {
       setError(err.message || 'حدث خطأ أثناء التحصيل');
     } finally {
       setLoading(false);
     }
+  };
+
+  const closePrintModal = () => {
+    setShowPrintModal(false);
+    setSuccess(false);
+    setLastCollectionData(null);
   };
 
   const handleQuickAmount = (value: number) => {
@@ -82,8 +107,21 @@ const CollectionTab: React.FC<CollectionTabProps> = ({ selectedCustomer }) => {
 
   return (
     <div className="p-5 space-y-5">
+      {/* Print Modal */}
+      {showPrintModal && lastCollectionData && (
+        <InvoicePrint
+          invoiceType="collection"
+          invoiceId={lastCollectionData.id}
+          customerName={lastCollectionData.customerName}
+          date={new Date()}
+          grandTotal={lastCollectionData.amount}
+          notes={lastCollectionData.notes}
+          onClose={closePrintModal}
+        />
+      )}
+
       {/* Success Message */}
-      {success && (
+      {success && !showPrintModal && (
         <div className="bg-emerald-50 text-emerald-600 p-4 rounded-2xl flex items-center gap-2 border border-emerald-200">
           <Check className="w-5 h-5" />
           <span className="font-bold">تم التحصيل بنجاح!</span>

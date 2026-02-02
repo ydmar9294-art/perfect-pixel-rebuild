@@ -284,6 +284,47 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_legal_info: {
+        Row: {
+          commercial_registration: string | null
+          created_at: string
+          id: string
+          industrial_registration: string | null
+          organization_id: string
+          tax_identification: string | null
+          trademark_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          commercial_registration?: string | null
+          created_at?: string
+          id?: string
+          industrial_registration?: string | null
+          organization_id: string
+          tax_identification?: string | null
+          trademark_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          commercial_registration?: string | null
+          created_at?: string
+          id?: string
+          industrial_registration?: string | null
+          organization_id?: string
+          tax_identification?: string | null
+          trademark_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_legal_info_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_users: {
         Row: {
           created_at: string

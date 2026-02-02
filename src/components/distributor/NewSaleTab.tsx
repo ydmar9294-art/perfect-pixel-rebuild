@@ -9,11 +9,13 @@ import {
   Check,
   Loader2,
   Package,
-  AlertCircle
+  AlertCircle,
+  Printer
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types';
+import InvoicePrint from './InvoicePrint';
 
 interface CartItem {
   product_id: string;
@@ -43,6 +45,15 @@ const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
   const [success, setSuccess] = useState(false);
   const [distributorInventory, setDistributorInventory] = useState<DistributorProduct[]>([]);
   const [loadingInventory, setLoadingInventory] = useState(true);
+  
+  // Print state
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [lastSaleData, setLastSaleData] = useState<{
+    id: string;
+    customerName: string;
+    items: CartItem[];
+    grandTotal: number;
+  } | null>(null);
 
   // جلب مخزون الموزع الخاص به فقط
   useEffect(() => {
@@ -140,9 +151,18 @@ const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
     setLoading(true);
     try {
       await createSale(selectedCustomer.id, cart);
+      
+      // Store sale data for printing
+      setLastSaleData({
+        id: crypto.randomUUID(),
+        customerName: selectedCustomer.name,
+        items: [...cart],
+        grandTotal
+      });
+      
       setCart([]);
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
+      setShowPrintModal(true); // Show print modal after success
       await refreshAllData();
     } catch (error) {
       console.error('Error creating sale:', error);
@@ -152,10 +172,36 @@ const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
     }
   };
 
+  const closePrintModal = () => {
+    setShowPrintModal(false);
+    setSuccess(false);
+    setLastSaleData(null);
+  };
+
   return (
     <div className="p-5 space-y-5">
+      {/* Print Modal */}
+      {showPrintModal && lastSaleData && (
+        <InvoicePrint
+          invoiceType="sale"
+          invoiceId={lastSaleData.id}
+          customerName={lastSaleData.customerName}
+          date={new Date()}
+          items={lastSaleData.items.map(item => ({
+            product_name: item.product_name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.quantity * item.unit_price
+          }))}
+          grandTotal={lastSaleData.grandTotal}
+          paidAmount={0}
+          remaining={lastSaleData.grandTotal}
+          onClose={closePrintModal}
+        />
+      )}
+
       {/* Success Message */}
-      {success && (
+      {success && !showPrintModal && (
         <div className="bg-emerald-50 text-emerald-600 p-4 rounded-2xl flex items-center gap-2 border border-emerald-200">
           <Check className="w-5 h-5" />
           <span className="font-bold">تم إنشاء الفاتورة بنجاح!</span>

@@ -8,10 +8,12 @@ import {
   Loader2,
   X,
   AlertCircle,
-  ChevronDown
+  ChevronDown,
+  Printer
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
+import InvoicePrint from './InvoicePrint';
 
 interface ReturnItem {
   product_id: string;
@@ -45,6 +47,16 @@ const SalesReturnTab: React.FC<SalesReturnTabProps> = ({ selectedCustomer }) => 
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [distributorInventory, setDistributorInventory] = useState<DistributorProduct[]>([]);
+  
+  // Print state
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [lastReturnData, setLastReturnData] = useState<{
+    id: string;
+    customerName: string;
+    items: { product_name: string; quantity: number; unit_price: number; total_price: number }[];
+    grandTotal: number;
+    reason?: string;
+  } | null>(null);
 
   // جلب مخزون الموزع الخاص به فقط
   useEffect(() => {
@@ -124,13 +136,29 @@ const SalesReturnTab: React.FC<SalesReturnTabProps> = ({ selectedCustomer }) => 
 
       if (rpcError) throw rpcError;
 
+      const totalAmount = quantity * Number(product.unit_price);
+      
+      // Store return data for printing
+      setLastReturnData({
+        id: crypto.randomUUID(),
+        customerName: selectedSale?.customerName || '',
+        items: [{
+          product_name: product.product_name,
+          quantity: quantity,
+          unit_price: Number(product.unit_price),
+          total_price: totalAmount
+        }],
+        grandTotal: totalAmount,
+        reason: reason || undefined
+      });
+
       setSelectedSaleId('');
       setSaleItems([]);
       setSelectedProduct('');
       setQuantity(1);
       setReason('');
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
+      setShowPrintModal(true); // Show print modal after success
       await refreshAllData();
     } catch (err: any) {
       setError(err.message || 'حدث خطأ أثناء إنشاء المرتجع');
@@ -139,14 +167,34 @@ const SalesReturnTab: React.FC<SalesReturnTabProps> = ({ selectedCustomer }) => 
     }
   };
 
+  const closePrintModal = () => {
+    setShowPrintModal(false);
+    setSuccess(false);
+    setLastReturnData(null);
+  };
+
   const totalReturn = selectedProduct && saleItems.length > 0 
     ? quantity * Number(saleItems.find(i => i.product_id === selectedProduct)?.unit_price || 0)
     : 0;
 
   return (
     <div className="p-5 space-y-5">
+      {/* Print Modal */}
+      {showPrintModal && lastReturnData && (
+        <InvoicePrint
+          invoiceType="return"
+          invoiceId={lastReturnData.id}
+          customerName={lastReturnData.customerName}
+          date={new Date()}
+          items={lastReturnData.items}
+          grandTotal={lastReturnData.grandTotal}
+          notes={lastReturnData.reason}
+          onClose={closePrintModal}
+        />
+      )}
+
       {/* Success Message */}
-      {success && (
+      {success && !showPrintModal && (
         <div className="bg-emerald-50 text-emerald-600 p-4 rounded-2xl flex items-center gap-2 border border-emerald-200">
           <Check className="w-5 h-5" />
           <span className="font-bold">تم إنشاء المرتجع بنجاح!</span>
