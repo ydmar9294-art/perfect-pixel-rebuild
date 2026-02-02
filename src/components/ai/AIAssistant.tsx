@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef } from 'react';
 import { Sparkles, X, Send, Loader2, MessageCircle } from 'lucide-react';
 
 interface Message {
@@ -6,7 +6,11 @@ interface Message {
   content: string;
 }
 
-const AIAssistant: React.FC = () => {
+interface AIAssistantProps {
+  className?: string;
+}
+
+const AIAssistant = forwardRef<HTMLButtonElement, AIAssistantProps>(({ className }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -108,9 +112,11 @@ const AIAssistant: React.FC = () => {
   if (!isOpen) {
     return (
       <button
+        ref={ref}
         onClick={() => setIsOpen(true)}
-        className="p-2.5 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full shadow-md text-white hover:from-purple-600 hover:to-blue-700 transition-all"
+        className={`p-2.5 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full shadow-md text-white hover:from-purple-600 hover:to-blue-700 transition-all active:scale-95 ${className || ''}`}
         title="المساعد الذكي"
+        type="button"
       >
         <Sparkles className="w-5 h-5" />
       </button>
@@ -134,6 +140,7 @@ const AIAssistant: React.FC = () => {
           <button 
             onClick={() => setIsOpen(false)}
             className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+            type="button"
           >
             <X className="w-5 h-5" />
           </button>
@@ -195,6 +202,7 @@ const AIAssistant: React.FC = () => {
               onClick={sendMessage}
               disabled={!input.trim() || isLoading}
               className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50 hover:bg-blue-700 transition-colors"
+              type="button"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -207,6 +215,8 @@ const AIAssistant: React.FC = () => {
       </div>
     </div>
   );
-};
+});
+
+AIAssistant.displayName = 'AIAssistant';
 
 export default AIAssistant;

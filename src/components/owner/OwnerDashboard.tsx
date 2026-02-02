@@ -6,7 +6,6 @@ import {
   TrendingUp,
   LogOut,
   LayoutDashboard,
-  DollarSign,
   Receipt,
   Wallet,
   UserPlus,
@@ -15,8 +14,7 @@ import {
   CheckCircle2,
   Clock,
   ShieldCheck,
-  MessageCircle,
-  Sparkles
+  MessageCircle
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { CURRENCY } from '@/constants';
@@ -49,16 +47,6 @@ const OwnerDashboard: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [newEmployeeCode, setNewEmployeeCode] = useState<string | null>(null);
   const [newEmployeeData, setNewEmployeeData] = useState<any | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [copiedPayment, setCopiedPayment] = useState(false);
-
-  const SHAMCASH_ADDRESS = 'efd5411a5f29e0cdb279363de2dd62b3';
-
-  const handleCopyPayment = () => {
-    navigator.clipboard.writeText(SHAMCASH_ADDRESS);
-    setCopiedPayment(true);
-    setTimeout(() => setCopiedPayment(false), 2000);
-  };
 
   React.useEffect(() => { setIsMounted(true); }, []);
 
@@ -229,36 +217,36 @@ const OwnerDashboard: React.FC = () => {
         <div className="px-4 pb-8">
         {/* Daily Tab */}
         {activeTab === 'daily' && (
-          <div className="space-y-4 animate-fade-in">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white p-5 rounded-3xl shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-                    <Receipt className="w-6 h-6 text-blue-600" />
+          <div className="space-y-3 animate-fade-in">
+            {/* KPI Cards - Compact */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-white p-4 rounded-2xl shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <Receipt className="w-5 h-5 text-blue-600" />
                   </div>
                 </div>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">مبيعات اليوم</p>
-                <p className="text-2xl font-black text-gray-800">{stats.todayRevenue.toLocaleString()}</p>
-                <p className="text-xs text-gray-400">{CURRENCY}</p>
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">مبيعات اليوم</p>
+                <p className="text-xl font-black text-gray-800">{stats.todayRevenue.toLocaleString()}</p>
+                <p className="text-[10px] text-gray-400">{CURRENCY}</p>
               </div>
               
-              <div className="bg-white p-5 rounded-3xl shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center">
-                    <Wallet className="w-6 h-6 text-emerald-600" />
+              <div className="bg-white p-4 rounded-2xl shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                    <Wallet className="w-5 h-5 text-emerald-600" />
                   </div>
                 </div>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">التحصيلات</p>
-                <p className="text-2xl font-black text-gray-800">{stats.totalCollections.toLocaleString()}</p>
-                <p className="text-xs text-gray-400">{CURRENCY}</p>
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">التحصيلات</p>
+                <p className="text-xl font-black text-gray-800">{stats.totalCollections.toLocaleString()}</p>
+                <p className="text-[10px] text-gray-400">{CURRENCY}</p>
               </div>
             </div>
 
-            {/* Chart */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm">
-              <h3 className="font-bold text-gray-800 mb-4">أداء الأسبوع</h3>
-              <div className="h-48">
+            {/* Chart - Compact */}
+            <div className="bg-white p-4 rounded-2xl shadow-sm">
+              <h3 className="font-bold text-gray-800 mb-3 text-sm">أداء الأسبوع</h3>
+              <div className="h-36 sm:h-40">
                 {isMounted && (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={stats.chartData}>
@@ -269,9 +257,9 @@ const OwnerDashboard: React.FC = () => {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
-                      <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
-                      <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fillOpacity={1} fill="url(#colorRev)" strokeWidth={3} />
+                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700}} />
+                      <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: '11px' }} />
+                      <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fillOpacity={1} fill="url(#colorRev)" strokeWidth={2} />
                     </AreaChart>
                   </ResponsiveContainer>
                 )}
@@ -377,18 +365,9 @@ const OwnerDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Finance Tab */}
+        {/* Finance Tab - No ShamCash payment button */}
         {activeTab === 'finance' && (
           <div className="space-y-4 animate-fade-in">
-            {/* ShamCash Payment Button */}
-            <button
-              onClick={() => setShowPaymentModal(true)}
-              className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
-            >
-              <Wallet className="w-5 h-5" />
-              الدفع عبر شام كاش
-            </button>
-            
             <div className="bg-white rounded-3xl shadow-sm p-4">
               <FinanceTab />
             </div>
@@ -464,55 +443,6 @@ const OwnerDashboard: React.FC = () => {
                 </button>
               </form>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* ShamCash Payment Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPaymentModal(false)}>
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 animate-zoom-in" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <Wallet className="w-6 h-6 text-green-500" />
-                الدفع عبر شام كاش
-              </h2>
-              <button onClick={() => setShowPaymentModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-            
-            <div className="flex items-center justify-center py-4">
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/ShamCash_logo.svg/1200px-ShamCash_logo.svg.png" 
-                alt="ShamCash" 
-                className="h-16 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            </div>
-            
-            <p className="text-center text-sm text-gray-600 font-medium">عنوان الدفع:</p>
-            <div 
-              onClick={handleCopyPayment}
-              className="bg-gray-50 p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors border-2 border-green-200"
-            >
-              <span className="font-mono text-base text-gray-800 tracking-wide" dir="ltr">{SHAMCASH_ADDRESS}</span>
-              {copiedPayment ? (
-                <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
-              ) : (
-                <Copy className="w-6 h-6 text-gray-400 flex-shrink-0" />
-              )}
-            </div>
-            <p className="text-center text-xs text-gray-500">اضغط لنسخ العنوان</p>
-            
-            <button 
-              onClick={() => setShowPaymentModal(false)}
-              className="w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200"
-            >
-              إغلاق
-            </button>
           </div>
         </div>
       )}
