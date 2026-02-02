@@ -124,8 +124,8 @@ const AIAssistant = forwardRef<HTMLButtonElement, AIAssistantProps>(({ className
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" dir="rtl">
-      <div className="bg-white w-full max-w-md h-[80vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" dir="rtl">
+      <div className="bg-white w-full max-w-sm sm:max-w-md h-[75vh] sm:h-[80vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl mx-auto">
         {/* Header */}
         <div className="bg-slate-800 text-white p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
