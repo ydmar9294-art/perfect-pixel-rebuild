@@ -16,7 +16,7 @@ import {
 } from '@/hooks/useDataOperations';
 import { extractErrorMessage, withTimeout } from '@/lib/errorHandler';
 import { authMutex, refreshDeduplicator, refreshDebouncer } from '@/lib/concurrency';
-import { getCachedAuth, clearAuthCache } from '@/lib/authCache';
+import { getCachedAuth, clearAuthCache, setCachedAuth, CachedAuthState } from '@/lib/authCache';
 
 // ============================================
 // Context Type Definition
@@ -69,13 +69,30 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 // ============================================
-// Constants
+// Constants - OPTIMIZED for instant loading
 // ============================================
 
-// Faster timeout for cached sessions
-const AUTH_TIMEOUT_MS = 5000;
-const CACHE_TIMEOUT_MS = 2000;
+const AUTH_TIMEOUT_MS = 3000; // Reduced from 5000
 const DATA_REFRESH_DEBOUNCE_MS = 300;
+
+// Helper to build user from cache
+const buildUserFromCache = (cached: CachedAuthState): { user: User; role: UserRole; organization: Organization | null } => {
+  const user: User = {
+    id: cached.userId,
+    name: cached.fullName,
+    email: cached.email,
+    role: cached.role,
+    phone: '',
+    employeeType: cached.employeeType || undefined
+  };
+  const organization: Organization | null = cached.organizationId ? {
+    id: cached.organizationId,
+    name: cached.organizationName || '',
+    licenseStatus: cached.licenseStatus || null,
+    expiryDate: null
+  } : null;
+  return { user, role: cached.role, organization };
+};
 
 // ============================================
 // App Provider Component
@@ -204,7 +221,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // ============================================
-  // Auth Initialization - Optimized with caching
+  // Auth Initialization - INSTANT CACHE-FIRST
   // ============================================
 
   useEffect(() => {
@@ -213,29 +230,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     let isMounted = true;
 
-    // Fast path: Check cache first before any async operations
+    // INSTANT: Load from cache immediately (no async wait)
     const cached = getCachedAuth();
-    const hasCachedSession = !!cached;
+    if (cached) {
+      console.log('[Auth] INSTANT load from cache');
+      const { user: cachedUser, role: cachedRole, organization: cachedOrg } = buildUserFromCache(cached);
+      setUser(cachedUser);
+      setRole(cachedRole);
+      setOrganization(cachedOrg);
+      setIsAuthenticated(true);
+      setNeedsActivation(false);
+      setIsLoading(false); // Stop loading immediately!
+    }
 
-    // Use shorter timeout if we have cached data
-    const timeoutMs = hasCachedSession ? CACHE_TIMEOUT_MS : AUTH_TIMEOUT_MS;
-
+    // Timeout only for non-cached scenarios
     const timeoutId = setTimeout(() => {
       if (isMounted && isLoading) {
         console.warn('[Auth] Timeout reached, stopping loading');
         setIsLoading(false);
       }
-    }, timeoutMs);
+    }, AUTH_TIMEOUT_MS);
 
-    // Auth state change listener - only for sign out and new sign in
+    // Auth state change listener
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('[Auth] State change:', event, session?.user?.id);
         
-        if (isInternalAuthOp.current) {
-          console.log('[Auth] Ignoring event - internal auth op in progress');
-          return;
-        }
+        if (isInternalAuthOp.current) return;
 
         if (event === 'SIGNED_OUT') {
           clearAuthCache();
@@ -248,9 +269,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return;
         }
 
-        // Only process SIGNED_IN if we don't have cached data or it's a new session
         if (session?.user && event === 'SIGNED_IN') {
-          // Check if this is a different user than cached
           if (!cached || cached.userId !== session.user.id) {
             clearAuthCache();
             if (!initializingAuth.current) {
@@ -260,35 +279,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           }
         }
-        
-        // TOKEN_REFRESHED doesn't need profile reload - session is still valid
-        if (event === 'TOKEN_REFRESHED' && session?.user) {
-          console.log('[Auth] Token refreshed - no profile reload needed');
-        }
       }
     );
 
-    // Initial session check with cache optimization
-    const init = async () => {
-      console.log('[Auth] Init starting...');
+    // Background validation (don't block UI)
+    const validateInBackground = async () => {
+      console.log('[Auth] Background validation starting...');
       try {
         const { data, error } = await supabase.auth.getSession();
-        console.log('[Auth] Initial session:', data.session?.user?.id, error?.message);
         
-        if (data.session?.user) {
-          // Validate cache matches session
-          if (cached && cached.userId === data.session.user.id) {
-            console.log('[Auth] Cache valid - using fast path');
+        if (!data.session?.user) {
+          // No session - clear cache and reset state
+          if (cached) {
+            console.log('[Auth] Session expired - clearing cache');
+            clearAuthCache();
+            if (isMounted) {
+              setUser(null);
+              setRole(null);
+              setOrganization(null);
+              setIsAuthenticated(false);
+            }
           }
+          if (isMounted) setIsLoading(false);
+          return;
+        }
+
+        // Session exists - validate/refresh profile in background
+        if (!cached || cached.userId !== data.session.user.id) {
+          // Different user or no cache - do full resolve
           await resolveProfile(data.session.user.id);
-        } else if (cached) {
-          // No session but cache exists - clear stale cache
-          console.log('[Auth] No session - clearing stale cache');
-          clearAuthCache();
+        } else {
+          // Same user - refresh profile silently (don't set loading)
+          resolveProfile(data.session.user.id).catch(console.error);
         }
       } catch (err) {
-        console.error('[Auth] Init error:', err);
-        clearAuthCache();
+        console.error('[Auth] Background validation error:', err);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -297,7 +322,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
 
-    init();
+    validateInBackground();
 
     return () => {
       isMounted = false;
