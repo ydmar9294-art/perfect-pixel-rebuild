@@ -254,10 +254,10 @@ const OwnerDashboard: React.FC = () => {
                   <p className="text-lg font-black text-gray-800">{sales.filter(s => s.timestamp >= new Date().setHours(0,0,0,0)).length}</p>
                   <p className="text-[8px] text-gray-500 font-bold">فواتير اليوم</p>
                 </div>
-                <div className="bg-emerald-50 p-3 rounded-xl text-center">
-                  <Wallet className="w-5 h-5 mx-auto text-emerald-600 mb-1" />
-                  <p className="text-lg font-black text-gray-800">{payments.filter(p => p.timestamp >= new Date().setHours(0,0,0,0) && !p.isReversed).length}</p>
-                  <p className="text-[8px] text-gray-500 font-bold">تحصيلات اليوم</p>
+                <div className="bg-red-50 p-3 rounded-xl text-center">
+                  <AlertTriangle className="w-5 h-5 mx-auto text-red-600 mb-1" />
+                  <p className="text-lg font-black text-gray-800">{products.filter(p => p.stock <= p.minStock && !p.isDeleted).length}</p>
+                  <p className="text-[8px] text-gray-500 font-bold">مواد منخفضة</p>
                 </div>
                 <div className="bg-purple-50 p-3 rounded-xl text-center">
                   <Users className="w-5 h-5 mx-auto text-purple-600 mb-1" />
