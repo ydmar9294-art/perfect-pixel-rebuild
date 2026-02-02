@@ -1,20 +1,14 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { CURRENCY } from '@/constants';
 import { 
   TrendingUp, TrendingDown, DollarSign, CreditCard, AlertTriangle, 
-  Package, ArrowUpRight, ArrowDownRight, BarChart3, PieChart 
+  Package, ArrowUpRight, ArrowDownRight, BarChart3, PieChart,
+  FileText, Users, Wallet, Clock
 } from 'lucide-react';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer
-} from 'recharts';
 
 export const FinanceTab: React.FC = () => {
   const { sales, payments, products, customers } = useApp();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => { setIsMounted(true); }, []);
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -70,22 +64,6 @@ export const FinanceTab: React.FC = () => {
       .slice(0, 5)
       .map(([name, value]) => ({ name, value }));
 
-    // بيانات الرسم البياني للأسبوع
-    const dailyData = Array.from({ length: 7 }).map((_, i) => {
-      const d = new Date(weekStart);
-      d.setDate(weekStart.getDate() + i);
-      const dayStart = new Date(d).setHours(0, 0, 0, 0);
-      const dayEnd = new Date(d).setHours(23, 59, 59, 999);
-      
-      const daySales = sales.filter(s => s.timestamp >= dayStart && s.timestamp <= dayEnd && !s.isVoided);
-      const dayCollections = payments.filter(p => p.timestamp >= dayStart && p.timestamp <= dayEnd && !p.isReversed);
-      
-      return {
-        day: d.toLocaleDateString('ar-EG', { weekday: 'short' }),
-        sales: daySales.reduce((s, v) => s + v.grandTotal, 0),
-        collections: dayCollections.reduce((s, p) => s + p.amount, 0)
-      };
-    });
 
     return {
       thisWeekRevenue,
@@ -96,7 +74,6 @@ export const FinanceTab: React.FC = () => {
       totalDebts,
       totalReturns,
       topProducts,
-      dailyData,
       thisWeekSalesCount: thisWeekSales.length,
       lastWeekSalesCount: lastWeekSales.length
     };
@@ -158,50 +135,32 @@ export const FinanceTab: React.FC = () => {
         </div>
       </div>
 
-      {/* الرسم البياني - Compact & Responsive */}
+      {/* نظام تتبع ERP - ملخص العمليات */}
       <div className="bg-card p-4 rounded-[2rem] border shadow-sm">
         <h3 className="font-black text-foreground mb-3 flex items-center gap-2 text-sm">
-          <TrendingUp size={16} className="text-primary" />
-          أداء الأسبوع
+          <Clock size={16} className="text-primary" />
+          ملخص النظام
         </h3>
-        <div className="h-32 sm:h-40 md:h-48">
-          {isMounted && (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.dailyData}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorCollections" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9}} width={35} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: '11px' }}
-                  formatter={(value: number, name: string) => [
-                    `${value.toLocaleString()} ${CURRENCY}`,
-                    name === 'sales' ? 'المبيعات' : 'التحصيلات'
-                  ]}
-                />
-                <Area type="monotone" dataKey="sales" stroke="hsl(221, 83%, 53%)" fillOpacity={1} fill="url(#colorSales)" strokeWidth={2} />
-                <Area type="monotone" dataKey="collections" stroke="hsl(142, 76%, 36%)" fillOpacity={1} fill="url(#colorCollections)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-        <div className="flex justify-center gap-4 mt-2">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-            <span className="text-[10px] font-bold text-muted-foreground">المبيعات</span>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-blue-50 p-3 rounded-xl text-center">
+            <FileText className="w-5 h-5 mx-auto text-blue-600 mb-1" />
+            <p className="text-lg font-black text-gray-800">{stats.thisWeekSalesCount}</p>
+            <p className="text-[8px] text-gray-500 font-bold">فواتير الأسبوع</p>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-success" />
-            <span className="text-[10px] font-bold text-muted-foreground">التحصيلات</span>
+          <div className="bg-emerald-50 p-3 rounded-xl text-center">
+            <Wallet className="w-5 h-5 mx-auto text-emerald-600 mb-1" />
+            <p className="text-lg font-black text-gray-800">{payments.filter(p => !p.isReversed).length}</p>
+            <p className="text-[8px] text-gray-500 font-bold">عمليات تحصيل</p>
+          </div>
+          <div className="bg-orange-50 p-3 rounded-xl text-center">
+            <Users className="w-5 h-5 mx-auto text-orange-600 mb-1" />
+            <p className="text-lg font-black text-gray-800">{customers.filter(c => c.balance > 0).length}</p>
+            <p className="text-[8px] text-gray-500 font-bold">زبائن بذمم</p>
+          </div>
+          <div className="bg-red-50 p-3 rounded-xl text-center">
+            <Package className="w-5 h-5 mx-auto text-red-600 mb-1" />
+            <p className="text-lg font-black text-gray-800">{products.filter(p => p.stock <= p.minStock).length}</p>
+            <p className="text-[8px] text-gray-500 font-bold">منتجات منخفضة</p>
           </div>
         </div>
       </div>
