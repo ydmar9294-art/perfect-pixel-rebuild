@@ -15,7 +15,10 @@ import {
   Clock,
   ShieldCheck,
   MessageCircle,
-  AlertTriangle
+  AlertTriangle,
+  Phone,
+  MapPin,
+  CircleDollarSign
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { CURRENCY } from '@/constants';
@@ -386,18 +389,73 @@ const OwnerDashboard: React.FC = () => {
         {/* Customers Tab */}
         {activeTab === 'customers' && (
           <div className="space-y-3 animate-fade-in">
+            {/* Summary Card */}
             <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-3xl text-white shadow-lg">
-              <p className="text-xs opacity-80 mb-1">إجمالي ذمم السوق</p>
-              <p className="text-3xl font-black">{customers.reduce((s, c) => s + c.balance, 0).toLocaleString()} {CURRENCY}</p>
-            </div>
-            {customers.map(c => (
-              <div key={c.id} className="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center">
-                <p className="font-bold text-gray-800">{c.name}</p>
-                <p className={`font-bold ${c.balance > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                  {c.balance.toLocaleString()} {CURRENCY}
-                </p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs opacity-80 mb-1">إجمالي ذمم السوق</p>
+                  <p className="text-3xl font-black">{customers.reduce((s, c) => s + c.balance, 0).toLocaleString()} {CURRENCY}</p>
+                </div>
+                <div className="text-left">
+                  <p className="text-xs opacity-80 mb-1">عدد الزبائن</p>
+                  <p className="text-2xl font-black">{customers.length}</p>
+                </div>
               </div>
-            ))}
+              <div className="mt-4 pt-3 border-t border-white/20 flex justify-between text-xs">
+                <span className="opacity-80">زبائن بذمم مدينة</span>
+                <span className="font-bold">{customers.filter(c => c.balance > 0).length}</span>
+              </div>
+            </div>
+
+            {/* Customer List */}
+            {customers.length === 0 ? (
+              <div className="bg-white p-8 rounded-3xl text-center">
+                <Users className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-400 font-medium">لا يوجد زبائن بعد</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {customers.map(c => (
+                  <div key={c.id} className="bg-white p-4 rounded-2xl shadow-sm">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${c.balance > 0 ? 'bg-red-100' : 'bg-emerald-100'}`}>
+                          <CircleDollarSign className={`w-5 h-5 ${c.balance > 0 ? 'text-red-500' : 'text-emerald-500'}`} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800">{c.name}</p>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.balance > 0 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                            {c.balance > 0 ? 'ذمة مدينة' : 'لا توجد ذمم'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-left">
+                        <p className={`font-black text-lg ${c.balance > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                          {c.balance.toLocaleString()}
+                        </p>
+                        <p className="text-[10px] text-gray-400">{CURRENCY}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Customer Details */}
+                    <div className="flex flex-wrap gap-3 pt-3 border-t border-gray-100">
+                      {c.phone && (
+                        <div className="flex items-center gap-1.5 text-gray-500">
+                          <Phone className="w-3.5 h-3.5" />
+                          <span className="text-xs font-medium" dir="ltr">{c.phone}</span>
+                        </div>
+                      )}
+                      {c.location && (
+                        <div className="flex items-center gap-1.5 text-gray-500">
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span className="text-xs font-medium">{c.location}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
