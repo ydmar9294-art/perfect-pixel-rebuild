@@ -968,6 +968,16 @@ export type Database = {
         }
         Returns: string
       }
+      bootstrap_developer_oauth: {
+        Args: {
+          p_bootstrap_code: string
+          p_email: string
+          p_full_name: string
+          p_google_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       check_login_rate_limit: { Args: { p_ip_hash: string }; Returns: boolean }
       check_oauth_profile: { Args: { p_user_id: string }; Returns: Json }
       create_delivery_rpc:
