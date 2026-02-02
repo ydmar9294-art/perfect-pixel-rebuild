@@ -16,6 +16,7 @@ import {
 } from '@/hooks/useDataOperations';
 import { extractErrorMessage, withTimeout } from '@/lib/errorHandler';
 import { authMutex, refreshDeduplicator, refreshDebouncer } from '@/lib/concurrency';
+import { getCachedAuth, clearAuthCache } from '@/lib/authCache';
 
 // ============================================
 // Context Type Definition
@@ -71,7 +72,9 @@ const AppContext = createContext<AppContextType | null>(null);
 // Constants
 // ============================================
 
-const AUTH_TIMEOUT_MS = 8000;
+// Faster timeout for cached sessions
+const AUTH_TIMEOUT_MS = 5000;
+const CACHE_TIMEOUT_MS = 2000;
 const DATA_REFRESH_DEBOUNCE_MS = 300;
 
 // ============================================
@@ -157,7 +160,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [refreshAllData]);
 
   // ============================================
-  // Profile Resolution
+  // Profile Resolution - Uses caching
   // ============================================
 
   const resolveProfile = async (uid: string) => {
@@ -175,6 +178,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setOrganization(result.organization);
     setNeedsActivation(false);
     setIsAuthenticated(true);
+    
+    // Log cache hit for debugging
+    if (result.fromCache) {
+      console.log('[Auth] Loaded from cache - fast path');
+    }
+    
     return true;
   };
 
@@ -195,7 +204,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // ============================================
-  // Auth Initialization
+  // Auth Initialization - Optimized with caching
   // ============================================
 
   useEffect(() => {
@@ -204,15 +213,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     let isMounted = true;
 
-    // Timeout لمنع التحميل اللانهائي
+    // Fast path: Check cache first before any async operations
+    const cached = getCachedAuth();
+    const hasCachedSession = !!cached;
+
+    // Use shorter timeout if we have cached data
+    const timeoutMs = hasCachedSession ? CACHE_TIMEOUT_MS : AUTH_TIMEOUT_MS;
+
     const timeoutId = setTimeout(() => {
       if (isMounted && isLoading) {
         console.warn('[Auth] Timeout reached, stopping loading');
         setIsLoading(false);
       }
-    }, AUTH_TIMEOUT_MS);
+    }, timeoutMs);
 
-    // Auth state change listener
+    // Auth state change listener - only for sign out and new sign in
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('[Auth] State change:', event, session?.user?.id);
@@ -223,6 +238,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         if (event === 'SIGNED_OUT') {
+          clearAuthCache();
           setUser(null);
           setRole(null);
           setOrganization(null);
@@ -232,17 +248,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return;
         }
 
-        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          if (!initializingAuth.current) {
-            setIsLoading(true);
-            await resolveProfile(session.user.id);
-            if (isMounted) setIsLoading(false);
+        // Only process SIGNED_IN if we don't have cached data or it's a new session
+        if (session?.user && event === 'SIGNED_IN') {
+          // Check if this is a different user than cached
+          if (!cached || cached.userId !== session.user.id) {
+            clearAuthCache();
+            if (!initializingAuth.current) {
+              setIsLoading(true);
+              await resolveProfile(session.user.id);
+              if (isMounted) setIsLoading(false);
+            }
           }
+        }
+        
+        // TOKEN_REFRESHED doesn't need profile reload - session is still valid
+        if (event === 'TOKEN_REFRESHED' && session?.user) {
+          console.log('[Auth] Token refreshed - no profile reload needed');
         }
       }
     );
 
-    // Initial session check
+    // Initial session check with cache optimization
     const init = async () => {
       console.log('[Auth] Init starting...');
       try {
@@ -250,10 +276,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.log('[Auth] Initial session:', data.session?.user?.id, error?.message);
         
         if (data.session?.user) {
+          // Validate cache matches session
+          if (cached && cached.userId === data.session.user.id) {
+            console.log('[Auth] Cache valid - using fast path');
+          }
           await resolveProfile(data.session.user.id);
+        } else if (cached) {
+          // No session but cache exists - clear stale cache
+          console.log('[Auth] No session - clearing stale cache');
+          clearAuthCache();
         }
       } catch (err) {
         console.error('[Auth] Init error:', err);
+        clearAuthCache();
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -272,7 +307,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // ============================================
-  // Logout
+  // Logout - Clear cache
   // ============================================
 
   const logout = async () => {
@@ -280,6 +315,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isInternalAuthOp.current = true;
       try {
         setIsLoading(true);
+        clearAuthCache();
         await supabase.auth.signOut();
         setUser(null);
         setRole(null);

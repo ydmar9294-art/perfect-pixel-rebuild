@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.validate-bootstrap-code]
 verify_jwt = true
+
+[functions.auth-status]
+verify_jwt = false

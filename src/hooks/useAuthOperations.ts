@@ -1,24 +1,172 @@
 /**
  * Auth Operations Hook - Centralized authentication logic
- * Internal refactoring - no behavior changes
+ * Optimized with caching for performance
  */
 import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole, User, EmployeeType, LicenseStatus, Organization } from '@/types';
+import { getCachedAuth, setCachedAuth, clearAuthCache, CachedAuthState } from '@/lib/authCache';
 
 interface ProfileResolutionResult {
   user: User | null;
   role: UserRole | null;
   organization: Organization | null;
   success: boolean;
+  fromCache?: boolean;
+}
+
+interface AuthStatusResponse {
+  authenticated: boolean;
+  needs_activation?: boolean;
+  access_denied?: boolean;
+  reason?: string;
+  message?: string;
+  user_id?: string;
+  role?: string;
+  employee_type?: string;
+  organization_id?: string;
+  organization_name?: string;
+  license_status?: string;
+  full_name?: string;
+  email?: string;
+  google_id?: string;
 }
 
 /**
- * Resolves user profile from database
- * Used after successful authentication
+ * Fast auth status check via lightweight edge function
+ * Use this instead of multiple DB queries on page load
+ */
+export const checkAuthStatus = async (): Promise<AuthStatusResponse> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      return { authenticated: false, reason: 'NO_SESSION' };
+    }
+
+    const { data, error } = await supabase.functions.invoke('auth-status', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    });
+
+    if (error) {
+      console.error('[AuthOps] auth-status error:', error);
+      throw error;
+    }
+
+    return data as AuthStatusResponse;
+  } catch (err) {
+    console.error('[AuthOps] checkAuthStatus failed:', err);
+    return { authenticated: false, reason: 'ERROR' };
+  }
+};
+
+/**
+ * Resolves user profile - checks cache first, then edge function
+ * Optimized to minimize DB queries
  */
 export const resolveUserProfile = async (uid: string): Promise<ProfileResolutionResult> => {
   console.log('[Auth] resolveProfile started for:', uid);
+  
+  try {
+    // 1. Check cache first (instant)
+    const cached = getCachedAuth();
+    if (cached && cached.userId === uid) {
+      console.log('[Auth] Using cached auth state');
+      
+      const user: User = {
+        id: cached.userId,
+        name: cached.fullName,
+        email: cached.email,
+        role: cached.role,
+        phone: '',
+        employeeType: cached.employeeType as EmployeeType
+      };
+
+      const organization: Organization | null = cached.organizationId ? {
+        id: cached.organizationId,
+        name: cached.organizationName || '',
+        licenseStatus: cached.licenseStatus || null,
+        expiryDate: null
+      } : null;
+
+      return { 
+        user, 
+        role: cached.role, 
+        organization, 
+        success: true, 
+        fromCache: true 
+      };
+    }
+
+    // 2. Call lightweight auth-status endpoint
+    const status = await checkAuthStatus();
+    
+    if (!status.authenticated) {
+      console.warn('[Auth] Not authenticated:', status.reason);
+      clearAuthCache();
+      return { user: null, role: null, organization: null, success: false };
+    }
+
+    if (status.access_denied) {
+      console.warn('[Auth] Access denied:', status.reason);
+      clearAuthCache();
+      return { user: null, role: null, organization: null, success: false };
+    }
+
+    if (status.needs_activation) {
+      console.log('[Auth] Profile needs activation');
+      return { user: null, role: null, organization: null, success: false };
+    }
+
+    // 3. Build and cache the result
+    const user: User = {
+      id: status.user_id!,
+      name: status.full_name || '',
+      email: status.email || '',
+      role: status.role as UserRole,
+      phone: '',
+      employeeType: status.employee_type as EmployeeType
+    };
+
+    const role = status.role as UserRole;
+    
+    const organization: Organization | null = status.organization_id ? {
+      id: status.organization_id,
+      name: status.organization_name || '',
+      licenseStatus: status.license_status as LicenseStatus || null,
+      expiryDate: null
+    } : null;
+
+    // Cache for future requests
+    setCachedAuth({
+      userId: status.user_id!,
+      role: role,
+      employeeType: status.employee_type as EmployeeType || null,
+      organizationId: status.organization_id || null,
+      organizationName: status.organization_name || null,
+      licenseStatus: status.license_status as LicenseStatus || null,
+      fullName: status.full_name || '',
+      email: status.email || ''
+    });
+
+    console.log('[Auth] Profile resolved successfully:', role);
+    
+    return { user, role, organization, success: true, fromCache: false };
+  } catch (err) {
+    console.error('[Auth] resolveProfile error:', err);
+    clearAuthCache();
+    return { user: null, role: null, organization: null, success: false };
+  }
+};
+
+/**
+ * Resolves user profile using legacy method (direct DB queries)
+ * Fallback if edge function is unavailable
+ */
+export const resolveUserProfileLegacy = async (uid: string): Promise<ProfileResolutionResult> => {
+  console.log('[Auth] resolveProfile (legacy) started for:', uid);
   
   try {
     const { data: profile, error } = await supabase
@@ -105,6 +253,18 @@ export const resolveUserProfile = async (uid: string): Promise<ProfileResolution
       licenseStatus,
       expiryDate
     } : null;
+
+    // Cache the result
+    setCachedAuth({
+      userId: user.id,
+      role: role,
+      employeeType: user.employeeType || null,
+      organizationId: organization?.id || null,
+      organizationName: organization?.name || null,
+      licenseStatus: organization?.licenseStatus || null,
+      fullName: user.name,
+      email: user.email
+    });
     
     console.log('[Auth] Profile resolved successfully:', profile.role);
     
