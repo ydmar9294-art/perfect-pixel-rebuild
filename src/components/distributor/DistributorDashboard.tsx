@@ -407,6 +407,7 @@ const DistributorDashboard: React.FC = () => {
                     onChange={(e) => setNewCustomerPhone(e.target.value.replace(/[^0-9+\-\s]/g, ''))}
                     className="w-full bg-gray-50 border-none rounded-xl px-12 py-4 font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     disabled={addingCustomer}
+                    required
                   />
                 </div>
               </div>
@@ -424,6 +425,7 @@ const DistributorDashboard: React.FC = () => {
                     onChange={(e) => setNewCustomerLocation(e.target.value)}
                     className="w-full bg-gray-50 border-none rounded-xl px-12 py-4 font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     disabled={addingCustomer}
+                    required
                   />
                 </div>
               </div>
@@ -432,7 +434,7 @@ const DistributorDashboard: React.FC = () => {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleAddCustomer}
-                disabled={addingCustomer || !newCustomerName.trim()}
+                disabled={addingCustomer || !newCustomerName.trim() || !newCustomerPhone.trim() || !newCustomerLocation.trim()}
                 className="flex-1 bg-emerald-500 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-bold disabled:opacity-50 hover:bg-emerald-600"
               >
                 {addingCustomer ? (
