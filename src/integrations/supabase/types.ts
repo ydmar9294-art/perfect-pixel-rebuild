@@ -384,6 +384,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           employee_type: Database["public"]["Enums"]["employee_type"]
+          expires_at: string | null
           id: string
           is_used: boolean
           name: string
@@ -396,6 +397,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           employee_type: Database["public"]["Enums"]["employee_type"]
+          expires_at?: string | null
           id?: string
           is_used?: boolean
           name: string
@@ -408,6 +410,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           employee_type?: Database["public"]["Enums"]["employee_type"]
+          expires_at?: string | null
           id?: string
           is_used?: boolean
           name?: string
