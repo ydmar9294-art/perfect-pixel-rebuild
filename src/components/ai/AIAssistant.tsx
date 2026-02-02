@@ -1,17 +1,13 @@
-import React, { useState, useRef, useEffect, forwardRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, X, Send, Loader2, MessageCircle } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
-interface AIAssistantProps {
-  className?: string;
-}
-
-const AIAssistant = forwardRef<HTMLButtonElement, AIAssistantProps>(({ className }, ref) => {
-  const [isOpen, setIsOpen] = useState(false);
+const AIAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +20,17 @@ const AIAssistant = forwardRef<HTMLButtonElement, AIAssistantProps>(({ className
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -109,37 +116,39 @@ const AIAssistant = forwardRef<HTMLButtonElement, AIAssistantProps>(({ className
     }
   };
 
-  if (!isOpen) {
-    return (
-      <button
-        ref={ref}
-        onClick={() => setIsOpen(true)}
-        className={`p-2.5 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full shadow-md text-white hover:from-purple-600 hover:to-blue-700 transition-all active:scale-95 ${className || ''}`}
-        title="المساعد الذكي"
-        type="button"
-      >
-        <Sparkles className="w-5 h-5" />
-      </button>
-    );
-  }
+  if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" dir="rtl">
-      <div className="bg-white w-full max-w-sm sm:max-w-md h-[75vh] sm:h-[80vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl mx-auto">
+  return createPortal(
+    <div 
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ zIndex: 99999 }}
+      dir="rtl"
+    >
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div 
+        className="relative bg-white w-full max-w-sm h-[70vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="bg-slate-800 text-white p-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-black">المساعد الذكي</h3>
+              <h3 className="font-bold text-base">المساعد الذكي</h3>
               <p className="text-xs text-white/70">مساعدك في إدارة المبيعات</p>
             </div>
           </div>
           <button 
-            onClick={() => setIsOpen(false)}
-            className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+            onClick={onClose}
+            className="p-2 hover:bg-white/20 rounded-xl transition-colors"
             type="button"
           >
             <X className="w-5 h-5" />
@@ -147,14 +156,14 @@ const AIAssistant = forwardRef<HTMLButtonElement, AIAssistantProps>(({ className
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
           {messages.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-slate-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                <MessageCircle className="w-8 h-8 text-slate-400" />
+            <div className="text-center py-8">
+              <div className="w-14 h-14 bg-purple-100 rounded-2xl mx-auto mb-3 flex items-center justify-center">
+                <MessageCircle className="w-7 h-7 text-purple-500" />
               </div>
-              <p className="text-gray-500 font-bold mb-2">مرحباً بك!</p>
-              <p className="text-gray-400 text-sm">كيف يمكنني مساعدتك اليوم؟</p>
+              <p className="text-gray-600 font-bold mb-1 text-sm">مرحباً بك!</p>
+              <p className="text-gray-400 text-xs">كيف يمكنني مساعدتك اليوم؟</p>
             </div>
           )}
 
@@ -164,21 +173,21 @@ const AIAssistant = forwardRef<HTMLButtonElement, AIAssistantProps>(({ className
               className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}
             >
               <div
-                className={`max-w-[85%] p-3 rounded-2xl ${
+                className={`max-w-[85%] p-3 rounded-2xl text-sm ${
                   msg.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-tr-sm'
-                    : 'bg-white text-gray-800 shadow-sm rounded-tl-sm'
+                    ? 'bg-purple-600 text-white rounded-tr-sm'
+                    : 'bg-white text-gray-800 shadow-sm rounded-tl-sm border'
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                <p className="whitespace-pre-wrap">{msg.content}</p>
               </div>
             </div>
           ))}
 
           {isLoading && messages[messages.length - 1]?.role === 'user' && (
             <div className="flex justify-end">
-              <div className="bg-white text-gray-800 p-3 rounded-2xl shadow-sm rounded-tl-sm">
-                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+              <div className="bg-white text-gray-800 p-3 rounded-2xl shadow-sm rounded-tl-sm border">
+                <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
               </div>
             </div>
           )}
@@ -187,7 +196,7 @@ const AIAssistant = forwardRef<HTMLButtonElement, AIAssistantProps>(({ className
         </div>
 
         {/* Input */}
-        <div className="p-4 bg-white border-t">
+        <div className="p-3 bg-white border-t shrink-0">
           <div className="flex gap-2">
             <input
               type="text"
@@ -195,13 +204,13 @@ const AIAssistant = forwardRef<HTMLButtonElement, AIAssistantProps>(({ className
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="اكتب رسالتك..."
-              className="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
               disabled={isLoading}
             />
             <button
               onClick={sendMessage}
               disabled={!input.trim() || isLoading}
-              className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50 hover:bg-blue-700 transition-colors"
+              className="w-11 h-11 bg-purple-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50 hover:bg-purple-700 transition-colors shrink-0"
               type="button"
             >
               {isLoading ? (
@@ -213,10 +222,28 @@ const AIAssistant = forwardRef<HTMLButtonElement, AIAssistantProps>(({ className
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
-});
+};
 
-AIAssistant.displayName = 'AIAssistant';
+const AIAssistant: React.FC<{ className?: string }> = ({ className }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setIsOpen(true)}
+        className={`p-2.5 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl shadow-md text-white hover:from-purple-600 hover:to-blue-700 transition-all active:scale-95 ${className || ''}`}
+        title="المساعد الذكي"
+        type="button"
+      >
+        <Sparkles className="w-5 h-5" />
+      </button>
+      
+      <AIAssistantModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+    </>
+  );
+};
 
 export default AIAssistant;
