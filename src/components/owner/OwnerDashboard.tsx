@@ -26,6 +26,7 @@ import { FinanceTab } from './FinanceTab';
 import { EmployeeKPIs } from './EmployeeKPIs';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import AIAssistant from '@/components/ai/AIAssistant';
+import WelcomeBanner from '@/components/ui/WelcomeBanner';
 
 type OwnerTabType = 'daily' | 'inventory' | 'team' | 'customers' | 'finance';
 
@@ -193,6 +194,11 @@ const OwnerDashboard: React.FC = () => {
               <LogOut className={`w-5 h-5 ${loggingOut ? 'animate-spin' : ''}`} />
             </button>
           </div>
+        </div>
+
+        {/* Welcome Banner */}
+        <div className="px-4 pb-4">
+          <WelcomeBanner />
         </div>
 
         {/* Tab Navigation - Pill Style */}
