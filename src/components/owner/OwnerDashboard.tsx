@@ -423,6 +423,9 @@ const OwnerDashboard: React.FC = () => {
                 />
                 <input 
                   name="phone" 
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   required 
                   placeholder="رقم الهاتف" 
                   className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500"
