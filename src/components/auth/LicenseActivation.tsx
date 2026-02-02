@@ -63,18 +63,28 @@ const LicenseActivation: React.FC<LicenseActivationProps> = ({
       
       // Determine activation type based on code format
       if (trimmedCode.startsWith('DEV-')) {
-        // Developer bootstrap activation
-        const { data, error: rpcError } = await supabase.rpc('bootstrap_developer_oauth', {
-          p_user_id: userId,
-          p_google_id: googleId,
-          p_email: email,
-          p_full_name: fullName,
-          p_bootstrap_code: trimmedCode
+        // Developer bootstrap activation via secure edge function
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.access_token) {
+          setError('يجب تسجيل الدخول أولاً');
+          return;
+        }
+
+        const response = await supabase.functions.invoke('validate-bootstrap-code', {
+          body: {
+            bootstrap_code: trimmedCode,
+            google_id: googleId,
+            email: email,
+            full_name: fullName
+          }
         });
 
-        if (rpcError) throw rpcError;
+        if (response.error) {
+          throw response.error;
+        }
         
-        const result = data as { success: boolean; error?: string; message?: string };
+        const result = response.data as { success: boolean; error?: string; message?: string };
         
         if (!result.success) {
           setError(result.message || 'فشل في تفعيل حساب المطور');

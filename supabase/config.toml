@@ -2,3 +2,6 @@ project_id = "hurujtsvbuhwcgjlqast"
 
 [functions.ai-assistant]
 verify_jwt = false
+
+[functions.validate-bootstrap-code]
+verify_jwt = true
