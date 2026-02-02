@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Building2, User, Loader2, CheckCircle2, AlertCircle, Sparkles, Copy, Wallet, LogOut } from 'lucide-react';
+import { Key, Building2, User, Loader2, CheckCircle2, AlertCircle, Sparkles, Copy, Wallet, LogOut, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface LicenseActivationProps {
@@ -22,7 +22,7 @@ const LicenseActivation: React.FC<LicenseActivationProps> = ({
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [codeType, setCodeType] = useState<'unknown' | 'org' | 'employee'>('unknown');
+  const [codeType, setCodeType] = useState<'unknown' | 'org' | 'employee' | 'developer'>('unknown');
   const [showPayment, setShowPayment] = useState(false);
   const [copiedPayment, setCopiedPayment] = useState(false);
 
@@ -37,9 +37,11 @@ const LicenseActivation: React.FC<LicenseActivationProps> = ({
   // Auto-detect code type
   useEffect(() => {
     const trimmedCode = code.trim().toUpperCase();
-    if (trimmedCode.startsWith('EMP-')) {
+    if (trimmedCode.startsWith('DEV-')) {
+      setCodeType('developer');
+    } else if (trimmedCode.startsWith('EMP-')) {
       setCodeType('employee');
-    } else if (trimmedCode.length >= 4 && !trimmedCode.startsWith('EMP-')) {
+    } else if (trimmedCode.length >= 4) {
       setCodeType('org');
     } else {
       setCodeType('unknown');
@@ -60,7 +62,25 @@ const LicenseActivation: React.FC<LicenseActivationProps> = ({
       const trimmedCode = code.trim().toUpperCase();
       
       // Determine activation type based on code format
-      if (trimmedCode.startsWith('EMP-')) {
+      if (trimmedCode.startsWith('DEV-')) {
+        // Developer bootstrap activation
+        const { data, error: rpcError } = await supabase.rpc('bootstrap_developer_oauth', {
+          p_user_id: userId,
+          p_google_id: googleId,
+          p_email: email,
+          p_full_name: fullName,
+          p_bootstrap_code: trimmedCode
+        });
+
+        if (rpcError) throw rpcError;
+        
+        const result = data as { success: boolean; error?: string; message?: string };
+        
+        if (!result.success) {
+          setError(result.message || 'فشل في تفعيل حساب المطور');
+          return;
+        }
+      } else if (trimmedCode.startsWith('EMP-')) {
         // Employee activation
         const { data, error: rpcError } = await supabase.rpc('activate_employee_oauth', {
           p_user_id: userId,
@@ -109,6 +129,16 @@ const LicenseActivation: React.FC<LicenseActivationProps> = ({
 
   const getCodeTypeInfo = () => {
     switch (codeType) {
+      case 'developer':
+        return {
+          icon: Shield,
+          label: 'كود مطور',
+          description: 'سيتم تفعيلك كمطور رئيسي للنظام',
+          color: 'text-destructive',
+          bgColor: 'bg-destructive/10',
+          borderColor: 'border-destructive/30',
+          glowColor: 'shadow-destructive/20'
+        };
       case 'org':
         return {
           icon: Building2,
@@ -275,6 +305,9 @@ const LicenseActivation: React.FC<LicenseActivationProps> = ({
         </p>
         <p className="text-[11px] text-muted-foreground">
           <span className="font-bold">كود الموظف:</span> EMP-XXXX-XXXX
+        </p>
+        <p className="text-[11px] text-muted-foreground">
+          <span className="font-bold">كود المطور:</span> DEV-XXXX-XXXX-XXXX
         </p>
       </div>
     </div>
