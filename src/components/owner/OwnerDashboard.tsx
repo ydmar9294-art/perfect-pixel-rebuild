@@ -154,7 +154,20 @@ const OwnerDashboard: React.FC = () => {
             <NotificationCenter />
           </div>
 
-          <div className="flex items-center justify-between mb-4 pt-6 mt-2">
+          {/* User Info - Top Center */}
+          <div className="flex justify-center pt-4 mb-3">
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-end">
+                <p className="font-bold text-gray-800 text-sm">{user?.name || 'المالك'}</p>
+                <p className="text-[10px] text-gray-400">لوحة الإدارة</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between mb-4">
             {/* Right (RTL): Action Buttons */}
             <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-2 py-1.5 rounded-xl shadow-sm">
               <AIAssistant className="!p-1.5 !rounded-lg" />
@@ -168,17 +181,6 @@ const OwnerDashboard: React.FC = () => {
               >
                 <MessageCircle className="w-4 h-4" />
               </a>
-            </div>
-
-            {/* Center: User Info */}
-            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <ShieldCheck className="w-4 h-4 text-white" />
-              </div>
-              <div className="text-end">
-                <p className="font-bold text-gray-800 text-sm">{user?.name || 'المالك'}</p>
-                <p className="text-[10px] text-gray-400">لوحة الإدارة</p>
-              </div>
             </div>
 
             {/* Left (RTL): Logout */}
