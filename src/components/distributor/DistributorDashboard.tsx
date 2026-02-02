@@ -19,6 +19,7 @@ import {
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
 import AIAssistant from '@/components/ai/AIAssistant';
+import WelcomeBanner from '@/components/ui/WelcomeBanner';
 import NewSaleTab from './NewSaleTab';
 import SalesReturnTab from './SalesReturnTab';
 import CollectionTab from './CollectionTab';
@@ -219,6 +220,11 @@ const DistributorDashboard: React.FC = () => {
             <ChevronDown className="w-5 h-5 text-gray-400" />
           </button>
         </div>
+      </div>
+
+      {/* Welcome Banner */}
+      <div className="px-4 pb-4">
+        <WelcomeBanner />
       </div>
 
       {/* Tab Navigation - Pill Style */}
