@@ -182,17 +182,19 @@ const OwnerDashboard: React.FC = () => {
             </div>
 
             {/* Right: AI Assistant, Support & Notification */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-2 py-1.5 rounded-2xl shadow-md mt-1">
               <AIAssistant />
+              <div className="w-px h-6 bg-gray-200" />
               <a
                 href="https://wa.me/963947744162"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 bg-green-500 rounded-full shadow-md text-white hover:bg-green-600 transition-all"
+                className="p-2 bg-gradient-to-br from-green-400 to-green-600 rounded-xl text-white hover:shadow-lg transition-all active:scale-95"
                 title="فريق الدعم"
               >
-                <MessageCircle className="w-5 h-5" />
+                <MessageCircle className="w-4 h-4" />
               </a>
+              <div className="w-px h-6 bg-gray-200" />
               <NotificationCenter />
             </div>
           </div>
