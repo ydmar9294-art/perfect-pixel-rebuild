@@ -164,7 +164,7 @@ const OwnerDashboard: React.FC = () => {
             <NotificationCenter />
           </div>
 
-          <div className="flex items-center justify-between mb-4 pt-2">
+          <div className="flex items-center justify-between mb-4 pt-6 mt-2">
             {/* Right (RTL): Action Buttons */}
             <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-2 py-1.5 rounded-2xl shadow-md">
               <AIAssistant />
