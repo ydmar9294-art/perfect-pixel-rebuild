@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ShieldCheck, Loader2, AlertCircle, XCircle } from 'lucide-react';
+import { ShieldCheck, Loader2, AlertCircle, XCircle, Zap, BarChart3, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { getCachedAuth, clearAuthCache } from '@/lib/authCache';
 import { checkAuthStatus } from '@/hooks/useAuthOperations';
@@ -264,6 +264,28 @@ const AuthFlow: React.FC<AuthFlowProps> = ({ onAuthComplete }) => {
         <p className="text-white/50 text-[11px] font-bold z-10 text-center leading-relaxed max-w-[200px]">
           الخاص بإدارة البيع والتوزيع للمنشآت الصغيرة
         </p>
+        
+        {/* Feature Icons */}
+        <div className="flex items-center justify-center gap-8 mt-6 z-10">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+              <Lock className="w-5 h-5 text-emerald-400" />
+            </div>
+            <span className="text-white/60 text-[10px] font-bold">آمن</span>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-cyan-400" />
+            </div>
+            <span className="text-white/60 text-[10px] font-bold">دقيق</span>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-amber-400" />
+            </div>
+            <span className="text-white/60 text-[10px] font-bold">سريع</span>
+          </div>
+        </div>
       </div>
 
       {/* Card Section */}
