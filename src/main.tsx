@@ -8,6 +8,7 @@ import { applySecurityMeta } from "@/utils/securityHeaders";
 // Apply security headers on app load
 applySecurityMeta();
 
+// Render app with AppProvider wrapping the entire application
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <AppProvider>
