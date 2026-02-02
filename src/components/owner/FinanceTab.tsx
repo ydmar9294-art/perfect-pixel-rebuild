@@ -19,7 +19,10 @@ export const FinanceTab: React.FC = () => {
   const stats = useMemo(() => {
     const now = new Date();
     const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay());
+    // بداية الأسبوع من السبت (التقويم العربي)
+    const dayOfWeek = now.getDay();
+    const daysFromSaturday = dayOfWeek === 6 ? 0 : dayOfWeek + 1;
+    weekStart.setDate(now.getDate() - daysFromSaturday);
     weekStart.setHours(0, 0, 0, 0);
     
     const lastWeekStart = new Date(weekStart);
