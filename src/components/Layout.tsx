@@ -2,8 +2,6 @@ import React from 'react';
 import { useApp } from '@/store/AppContext';
 import { UserRole, LicenseStatus } from '@/types';
 import { ShieldAlert, Phone, LogOut } from 'lucide-react';
-import AIAssistant from '@/components/ai/AIAssistant';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -85,18 +83,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       dir="rtl"
     >
       <main className="flex-1 relative">
-        {/* Header with Notification Center */}
-        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <AIAssistant />
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-bold text-muted-foreground">
-              {user.name}
-            </span>
-            <NotificationCenter />
-          </div>
-        </div>
         <div className="p-4 md:p-8">{children}</div>
       </main>
     </div>
