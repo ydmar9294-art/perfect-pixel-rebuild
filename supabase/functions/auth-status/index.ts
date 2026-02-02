@@ -2,12 +2,13 @@
  * Lightweight Auth Status Endpoint
  * Returns auth state instantly without heavy logic
  * Used for quick session validation on app load
+ * Includes real-time license status enforcement
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
 Deno.serve(async (req) => {
@@ -98,23 +99,65 @@ Deno.serve(async (req) => {
     }
 
     // Check license status for non-developers (indexed query)
+    // This enforces real-time license status - any status check will catch suspended licenses
     let licenseStatus: string | null = null
-    if (profile.role !== 'DEVELOPER' && profile.license_key) {
-      const { data: license } = await supabase
-        .from('developer_licenses')
-        .select('status')
-        .eq('licenseKey', profile.license_key)
-        .single()
-      licenseStatus = license?.status || null
+    
+    if (profile.role !== 'DEVELOPER') {
+      // For owners - check their own license
+      if (profile.license_key) {
+        const { data: license } = await supabase
+          .from('developer_licenses')
+          .select('status')
+          .eq('licenseKey', profile.license_key)
+          .single()
+        licenseStatus = license?.status || null
+      } 
+      // For employees - find owner's license via organization
+      else if (profile.organization_id) {
+        const { data: ownerProfile } = await supabase
+          .from('profiles')
+          .select('license_key')
+          .eq('organization_id', profile.organization_id)
+          .eq('role', 'OWNER')
+          .maybeSingle()
+        
+        if (ownerProfile?.license_key) {
+          const { data: license } = await supabase
+            .from('developer_licenses')
+            .select('status')
+            .eq('licenseKey', ownerProfile.license_key)
+            .single()
+          licenseStatus = license?.status || null
+        }
+      }
 
-      // Check if suspended
+      // REAL-TIME LICENSE ENFORCEMENT
+      // Check if suspended - immediately deny access
       if (licenseStatus === 'SUSPENDED') {
         return new Response(
           JSON.stringify({ 
             authenticated: true,
             access_denied: true,
             reason: 'LICENSE_SUSPENDED',
-            message: 'تم إيقاف الترخيص. يرجى مراجعة قسم المالية.'
+            message: 'تم إيقاف الترخيص. يرجى مراجعة قسم المالية لسداد المستحقات.',
+            force_logout: true
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      // Check if expired
+      if (licenseStatus === 'EXPIRED') {
+        return new Response(
+          JSON.stringify({ 
+            authenticated: true,
+            access_denied: true,
+            reason: 'LICENSE_EXPIRED',
+            message: 'انتهت صلاحية الترخيص. يرجى تجديد الاشتراك.',
+            force_logout: true
           }),
           { 
             status: 200, 

@@ -70,34 +70,12 @@ export const resolveUserProfile = async (uid: string): Promise<ProfileResolution
   console.log('[Auth] resolveProfile started for:', uid);
   
   try {
-    // 1. Check cache first (instant)
+    // 1. Check cache first - but always validate license status with server
     const cached = getCachedAuth();
-    if (cached && cached.userId === uid) {
-      console.log('[Auth] Using cached auth state');
-      
-      const user: User = {
-        id: cached.userId,
-        name: cached.fullName,
-        email: cached.email,
-        role: cached.role,
-        phone: '',
-        employeeType: cached.employeeType as EmployeeType
-      };
-
-      const organization: Organization | null = cached.organizationId ? {
-        id: cached.organizationId,
-        name: cached.organizationName || '',
-        licenseStatus: cached.licenseStatus || null,
-        expiryDate: null
-      } : null;
-
-      return { 
-        user, 
-        role: cached.role, 
-        organization, 
-        success: true, 
-        fromCache: true 
-      };
+    const hasCachedData = cached && cached.userId === uid;
+    
+    if (hasCachedData) {
+      console.log('[Auth] Have cached data, validating with server...');
     }
 
     // 2. Call lightweight auth-status endpoint

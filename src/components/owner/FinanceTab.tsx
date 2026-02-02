@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell 
+  ResponsiveContainer
 } from 'recharts';
 
 export const FinanceTab: React.FC = () => {
@@ -102,45 +102,45 @@ export const FinanceTab: React.FC = () => {
   const COLORS = ['hsl(221, 83%, 53%)', 'hsl(142, 76%, 36%)', 'hsl(48, 96%, 53%)', 'hsl(0, 84%, 60%)', 'hsl(262, 83%, 58%)'];
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      {/* KPIs الرئيسية */}
-      <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-3 animate-fade-in">
+      {/* KPIs الرئيسية - Compact */}
+      <div className="grid grid-cols-2 gap-2">
         <FinanceKpiCard 
           label="مبيعات الأسبوع" 
           value={stats.thisWeekRevenue} 
           change={stats.revenueChange}
-          icon={<DollarSign size={20} />}
+          icon={<DollarSign size={16} />}
           color="primary"
         />
         <FinanceKpiCard 
           label="التحصيلات" 
           value={stats.totalCollections} 
           change={stats.collectionsChange}
-          icon={<CreditCard size={20} />}
+          icon={<CreditCard size={16} />}
           color="success"
         />
         <FinanceKpiCard 
           label="إجمالي الذمم" 
           value={stats.totalDebts} 
-          icon={<AlertTriangle size={20} />}
+          icon={<AlertTriangle size={16} />}
           color="destructive"
           negative
         />
         <FinanceKpiCard 
           label="المرتجعات" 
           value={stats.totalReturns} 
-          icon={<Package size={20} />}
+          icon={<Package size={16} />}
           color="warning"
         />
       </div>
 
-      {/* مقارنة أسبوعية */}
-      <div className="bg-card p-5 rounded-[2.5rem] border shadow-sm">
-        <h3 className="font-black text-foreground mb-4 flex items-center gap-2">
-          <BarChart3 size={20} className="text-primary" />
-          مقارنة مع الأسبوع السابق
+      {/* مقارنة أسبوعية - Compact */}
+      <div className="bg-card p-4 rounded-[2rem] border shadow-sm">
+        <h3 className="font-black text-foreground mb-3 flex items-center gap-2 text-sm">
+          <BarChart3 size={16} className="text-primary" />
+          مقارنة أسبوعية
         </h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <ComparisonCard 
             label="المبيعات"
             thisWeek={stats.thisWeekRevenue}
@@ -155,13 +155,13 @@ export const FinanceTab: React.FC = () => {
         </div>
       </div>
 
-      {/* الرسم البياني */}
-      <div className="bg-card p-6 rounded-[2.5rem] border shadow-sm">
-        <h3 className="font-black text-foreground mb-4 flex items-center gap-2">
-          <TrendingUp size={20} className="text-primary" />
-          أداء الأسبوع اليومي
+      {/* الرسم البياني - Compact & Responsive */}
+      <div className="bg-card p-4 rounded-[2rem] border shadow-sm">
+        <h3 className="font-black text-foreground mb-3 flex items-center gap-2 text-sm">
+          <TrendingUp size={16} className="text-primary" />
+          أداء الأسبوع
         </h3>
-        <div className="h-40 md:h-64">
+        <div className="h-32 sm:h-40 md:h-48">
           {isMounted && (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.dailyData}>
@@ -176,10 +176,10 @@ export const FinanceTab: React.FC = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10}} />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9}} width={35} />
                 <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: '11px' }}
                   formatter={(value: number, name: string) => [
                     `${value.toLocaleString()} ${CURRENCY}`,
                     name === 'sales' ? 'المبيعات' : 'التحصيلات'
@@ -191,36 +191,36 @@ export const FinanceTab: React.FC = () => {
             </ResponsiveContainer>
           )}
         </div>
-        <div className="flex justify-center gap-6 mt-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-primary" />
-            <span className="text-xs font-bold text-muted-foreground">المبيعات</span>
+        <div className="flex justify-center gap-4 mt-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+            <span className="text-[10px] font-bold text-muted-foreground">المبيعات</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-success" />
-            <span className="text-xs font-bold text-muted-foreground">التحصيلات</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-success" />
+            <span className="text-[10px] font-bold text-muted-foreground">التحصيلات</span>
           </div>
         </div>
       </div>
 
-      {/* المنتجات الأكثر مبيعاً */}
+      {/* المنتجات الأكثر مبيعاً - Compact */}
       {stats.topProducts.length > 0 && (
-        <div className="bg-card p-5 rounded-[2.5rem] border shadow-sm">
-          <h3 className="font-black text-foreground mb-4 flex items-center gap-2">
-            <PieChart size={20} className="text-primary" />
+        <div className="bg-card p-4 rounded-[2rem] border shadow-sm">
+          <h3 className="font-black text-foreground mb-3 flex items-center gap-2 text-sm">
+            <PieChart size={16} className="text-primary" />
             أعلى الزبائن حجماً
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {stats.topProducts.map((item, index) => (
-              <div key={item.name} className="flex items-center justify-between bg-muted p-3 rounded-xl">
-                <div className="flex items-center gap-3">
+              <div key={item.name} className="flex items-center justify-between bg-muted p-2.5 rounded-xl">
+                <div className="flex items-center gap-2">
                   <div 
-                    className="w-4 h-4 rounded-full" 
+                    className="w-3 h-3 rounded-full flex-shrink-0" 
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
-                  <span className="font-bold text-sm">{item.name}</span>
+                  <span className="font-bold text-xs truncate max-w-[120px]">{item.name}</span>
                 </div>
-                <span className="font-black text-primary">{item.value.toLocaleString()} {CURRENCY}</span>
+                <span className="font-black text-primary text-xs">{item.value.toLocaleString()} {CURRENCY}</span>
               </div>
             ))}
           </div>
@@ -246,17 +246,17 @@ const FinanceKpiCard: React.FC<{
   };
 
   return (
-    <div className="bg-card p-5 rounded-[2rem] border shadow-sm">
-      <div className={`p-3 rounded-xl w-fit mb-3 ${colorClasses[color]}`}>
+    <div className="bg-card p-3 rounded-[1.5rem] border shadow-sm">
+      <div className={`p-2 rounded-lg w-fit mb-2 ${colorClasses[color]}`}>
         {icon}
       </div>
-      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1">{label}</span>
-      <p className={`text-xl font-black leading-none ${negative ? 'text-destructive' : 'text-foreground'}`}>
-        {value.toLocaleString()} <span className="text-[10px] font-medium opacity-30">{CURRENCY}</span>
+      <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider block mb-0.5">{label}</span>
+      <p className={`text-lg font-black leading-none ${negative ? 'text-destructive' : 'text-foreground'}`}>
+        {value.toLocaleString()} <span className="text-[9px] font-medium opacity-30">{CURRENCY}</span>
       </p>
       {change !== undefined && (
-        <div className={`flex items-center gap-1 mt-2 text-xs font-bold ${change >= 0 ? 'text-success' : 'text-destructive'}`}>
-          {change >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+        <div className={`flex items-center gap-0.5 mt-1.5 text-[10px] font-bold ${change >= 0 ? 'text-success' : 'text-destructive'}`}>
+          {change >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
           {Math.abs(change).toFixed(1)}%
         </div>
       )}
@@ -274,23 +274,23 @@ const ComparisonCard: React.FC<{
   const isPositive = change >= 0;
 
   return (
-    <div className="bg-muted p-4 rounded-2xl">
-      <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">{label}</p>
-      <div className="space-y-1">
+    <div className="bg-muted p-3 rounded-xl">
+      <p className="text-[9px] font-black text-muted-foreground uppercase mb-1.5">{label}</p>
+      <div className="space-y-0.5">
         <div className="flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">هذا الأسبوع</span>
-          <span className="font-black text-foreground">
-            {thisWeek.toLocaleString()} {isCurrency && <span className="text-[10px] opacity-30">{CURRENCY}</span>}
+          <span className="text-[10px] text-muted-foreground">هذا الأسبوع</span>
+          <span className="font-black text-foreground text-xs">
+            {thisWeek.toLocaleString()} {isCurrency && <span className="text-[9px] opacity-30">{CURRENCY}</span>}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">الأسبوع السابق</span>
-          <span className="font-bold text-muted-foreground">
-            {lastWeek.toLocaleString()} {isCurrency && <span className="text-[10px] opacity-30">{CURRENCY}</span>}
+          <span className="text-[10px] text-muted-foreground">السابق</span>
+          <span className="font-bold text-muted-foreground text-xs">
+            {lastWeek.toLocaleString()} {isCurrency && <span className="text-[9px] opacity-30">{CURRENCY}</span>}
           </span>
         </div>
-        <div className={`flex items-center justify-end gap-1 pt-1 text-xs font-black ${isPositive ? 'text-success' : 'text-destructive'}`}>
-          {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+        <div className={`flex items-center justify-end gap-0.5 pt-0.5 text-[10px] font-black ${isPositive ? 'text-success' : 'text-destructive'}`}>
+          {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
           {Math.abs(change).toFixed(1)}%
         </div>
       </div>

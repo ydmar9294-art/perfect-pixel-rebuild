@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Building2, User, Loader2, CheckCircle2, AlertCircle, Sparkles, Copy, Wallet, LogOut, Shield } from 'lucide-react';
+import { Key, Building2, User, Loader2, CheckCircle2, AlertCircle, Sparkles, Copy, Wallet, LogOut, Shield, MessageCircle, Clock, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface LicenseActivationProps {
@@ -10,6 +10,9 @@ interface LicenseActivationProps {
   onSuccess: () => void;
   onLogout: () => void;
 }
+
+const SHAMCASH_ADDRESS = 'efd5411a5f29e0cdb279363de2dd62b3';
+const WHATSAPP_NUMBER = '963947744162';
 
 const LicenseActivation: React.FC<LicenseActivationProps> = ({ 
   userId, 
@@ -26,12 +29,16 @@ const LicenseActivation: React.FC<LicenseActivationProps> = ({
   const [showPayment, setShowPayment] = useState(false);
   const [copiedPayment, setCopiedPayment] = useState(false);
 
-  const SHAMCASH_ADDRESS = 'efd5411a5f29e0cdb279363de2dd62b3';
-
   const handleCopyPayment = () => {
     navigator.clipboard.writeText(SHAMCASH_ADDRESS);
     setCopiedPayment(true);
     setTimeout(() => setCopiedPayment(false), 2000);
+  };
+
+  const handleContactSupport = () => {
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+      'مرحباً، قمت بدفع رسوم التفعيل عبر شام كاش وأريد تفعيل الترخيص. البريد الإلكتروني: ' + email
+    )}`, '_blank');
   };
 
   // Auto-detect code type
@@ -186,7 +193,7 @@ const LicenseActivation: React.FC<LicenseActivationProps> = ({
   const TypeIcon = typeInfo.icon;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* User Info */}
       <div className="flex items-center justify-between bg-muted/50 p-4 rounded-2xl border">
         <div className="flex items-center gap-3">
@@ -279,31 +286,61 @@ const LicenseActivation: React.FC<LicenseActivationProps> = ({
         )}
       </button>
 
-      {/* ShamCash Payment Button */}
-      <div className="pt-2">
+      {/* ShamCash Payment Section */}
+      <div className="pt-2 space-y-3">
         <button
           onClick={() => setShowPayment(!showPayment)}
-          className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all"
+          className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
         >
           <Wallet className="w-5 h-5" />
           الدفع عبر شام كاش
         </button>
         
         {showPayment && (
-          <div className="mt-3 p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl border border-green-200 dark:border-green-800 space-y-3 animate-in slide-in-from-top duration-300">
-            <p className="text-center text-sm text-gray-600 dark:text-gray-300 font-medium">عنوان الدفع:</p>
-            <div 
-              onClick={handleCopyPayment}
-              className="bg-white dark:bg-gray-800 p-3 rounded-xl flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-green-200 dark:border-green-700"
-            >
-              <span className="font-mono text-sm text-gray-800 dark:text-gray-200 tracking-wide" dir="ltr">{SHAMCASH_ADDRESS}</span>
-              {copiedPayment ? (
-                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-              ) : (
-                <Copy className="w-5 h-5 text-gray-400 flex-shrink-0" />
-              )}
+          <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl border border-green-200 dark:border-green-800 space-y-4 animate-in slide-in-from-top duration-300">
+            {/* Important Notice */}
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 rounded-xl">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-amber-800 dark:text-amber-200 text-xs mb-0.5">ملاحظة هامة</h4>
+                  <p className="text-amber-700 dark:text-amber-300 text-[10px] leading-relaxed">
+                    الاشتراك لن يتم تفعيله تلقائياً. بعد الدفع، تواصل مع فريق الدعم لتأكيد الدفع يدوياً.
+                  </p>
+                </div>
+              </div>
             </div>
-            <p className="text-center text-xs text-gray-500 dark:text-gray-400">اضغط لنسخ العنوان</p>
+
+            {/* Pending Status */}
+            <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <Clock className="w-4 h-4 text-blue-500" />
+              <span className="text-xs text-blue-700 dark:text-blue-300 font-bold">بانتظار تأكيد الدفع من الإدارة</span>
+            </div>
+
+            {/* Payment Address */}
+            <div className="space-y-1">
+              <p className="text-center text-xs text-gray-600 dark:text-gray-300 font-medium">عنوان الدفع:</p>
+              <div 
+                onClick={handleCopyPayment}
+                className="bg-white dark:bg-gray-800 p-3 rounded-xl flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-green-200 dark:border-green-700"
+              >
+                <span className="font-mono text-sm text-gray-800 dark:text-gray-200 tracking-wide" dir="ltr">{SHAMCASH_ADDRESS}</span>
+                {copiedPayment ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                ) : (
+                  <Copy className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                )}
+              </div>
+            </div>
+
+            {/* WhatsApp Contact Button */}
+            <button 
+              onClick={handleContactSupport}
+              className="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95"
+            >
+              <MessageCircle className="w-4 h-4" />
+              تواصل مع الدعم المالي (واتساب)
+            </button>
           </div>
         )}
       </div>
