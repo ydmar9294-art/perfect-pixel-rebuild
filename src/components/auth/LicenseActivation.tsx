@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Building2, User, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Sparkles, Copy, Wallet } from 'lucide-react';
-import { useApp } from '@/store/AppContext';
+import { Key, Building2, User, Loader2, CheckCircle2, AlertCircle, Sparkles, Copy, Wallet, LogOut } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-interface UnifiedActivationProps {
-  onSuccess?: () => void;
-  onBack?: () => void;
+interface LicenseActivationProps {
+  userId: string;
+  googleId: string;
+  email: string;
+  fullName: string;
+  onSuccess: () => void;
+  onLogout: () => void;
 }
 
-const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess, onBack }) => {
-  const { signUp, signUpEmployee, addNotification } = useApp();
+const LicenseActivation: React.FC<LicenseActivationProps> = ({ 
+  userId, 
+  googleId, 
+  email, 
+  fullName,
+  onSuccess,
+  onLogout
+}) => {
   const [code, setCode] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [codeType, setCodeType] = useState<'unknown' | 'org' | 'employee'>('unknown');
@@ -47,38 +54,53 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess, onBack
       return;
     }
 
-    if (!email.trim()) {
-      setError('يرجى إدخال البريد الإلكتروني');
-      return;
-    }
-
-    if (!password) {
-      setError('يرجى إدخال كلمة المرور');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-      return;
-    }
-
     setLoading(true);
 
     try {
       const trimmedCode = code.trim().toUpperCase();
       
-      // تحديد نوع التفعيل تلقائياً بناءً على الكود
+      // Determine activation type based on code format
       if (trimmedCode.startsWith('EMP-')) {
-        // كود موظف
-        await signUpEmployee(email.trim(), password, trimmedCode);
+        // Employee activation
+        const { data, error: rpcError } = await supabase.rpc('activate_employee_oauth', {
+          p_user_id: userId,
+          p_google_id: googleId,
+          p_email: email,
+          p_full_name: fullName,
+          p_activation_code: trimmedCode
+        });
+
+        if (rpcError) throw rpcError;
+        
+        const result = data as { success: boolean; error?: string; message?: string };
+        
+        if (!result.success) {
+          setError(result.message || 'فشل في تفعيل الحساب');
+          return;
+        }
       } else {
-        // كود منشأة
-        await signUp(email.trim(), password, trimmedCode);
+        // Organization license activation
+        const { data, error: rpcError } = await supabase.rpc('activate_license_oauth', {
+          p_user_id: userId,
+          p_google_id: googleId,
+          p_email: email,
+          p_full_name: fullName,
+          p_license_key: trimmedCode
+        });
+
+        if (rpcError) throw rpcError;
+        
+        const result = data as { success: boolean; error?: string; message?: string };
+        
+        if (!result.success) {
+          setError(result.message || 'فشل في تفعيل الترخيص');
+          return;
+        }
       }
       
-      addNotification('تم تفعيل الحساب بنجاح! جاري تسجيل الدخول...', 'success');
-      onSuccess?.();
+      onSuccess();
     } catch (err: any) {
+      console.error('[LicenseActivation] Error:', err);
       setError(err.message || 'فشل في التفعيل');
     } finally {
       setLoading(false);
@@ -125,12 +147,32 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess, onBack
 
   return (
     <div className="space-y-6">
+      {/* User Info */}
+      <div className="flex items-center justify-between bg-muted/50 p-4 rounded-2xl border">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <User className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="font-bold text-foreground text-sm">{fullName || email}</p>
+            <p className="text-xs text-muted-foreground">{email}</p>
+          </div>
+        </div>
+        <button
+          onClick={onLogout}
+          className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+          title="تسجيل الخروج"
+        >
+          <LogOut className="w-5 h-5" />
+        </button>
+      </div>
+
       {/* Header */}
       <div className="text-center space-y-2 pb-2">
         <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-3">
           <Sparkles className="w-7 h-7 text-primary" />
         </div>
-        <h3 className="text-lg font-black text-foreground">تفعيل حساب جديد</h3>
+        <h3 className="text-lg font-black text-foreground">تفعيل الحساب</h3>
         <p className="text-xs text-muted-foreground">أدخل كود التفعيل الخاص بك للبدء</p>
       </div>
 
@@ -170,44 +212,6 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess, onBack
         </div>
       </div>
 
-      {/* Email */}
-      <div className="space-y-3">
-        <label className="text-sm font-bold text-foreground">البريد الإلكتروني</label>
-        <input
-          type="email"
-          placeholder="example@email.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={loading}
-          className="input-field transition-all duration-300 focus:shadow-lg focus:shadow-primary/10"
-          dir="ltr"
-        />
-      </div>
-
-      {/* Password */}
-      <div className="space-y-3">
-        <label className="text-sm font-bold text-foreground">كلمة المرور</label>
-        <div className="relative">
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-            className="input-field transition-all duration-300 focus:shadow-lg focus:shadow-primary/10"
-            dir="ltr"
-          />
-          <button 
-            type="button" 
-            onClick={() => setShowPassword(!showPassword)} 
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-        </div>
-        <p className="text-[10px] text-muted-foreground">يجب أن تكون 6 أحرف على الأقل</p>
-      </div>
-
       {/* Error Message */}
       {error && (
         <div className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive rounded-2xl border border-destructive/20 animate-in slide-in-from-top duration-300">
@@ -219,7 +223,7 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess, onBack
       {/* Submit Button */}
       <button
         onClick={handleActivation}
-        disabled={loading || !code || !email || !password}
+        disabled={loading || !code}
         className="w-full py-5 bg-foreground text-background rounded-2xl font-black text-base flex items-center justify-center gap-3 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 shadow-xl shadow-foreground/10 hover:shadow-2xl hover:shadow-foreground/20"
       >
         {loading ? (
@@ -230,7 +234,7 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess, onBack
         ) : (
           <>
             <CheckCircle2 className="w-5 h-5" />
-            تفعيل الحساب والدخول
+            تفعيل الحساب
           </>
         )}
       </button>
@@ -246,30 +250,20 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess, onBack
         </button>
         
         {showPayment && (
-          <div className="mt-3 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 space-y-3 animate-in slide-in-from-top duration-300">
-            <div className="flex items-center justify-center">
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/ShamCash_logo.svg/1200px-ShamCash_logo.svg.png" 
-                alt="ShamCash" 
-                className="h-12 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            </div>
-            <p className="text-center text-sm text-gray-600 font-medium">عنوان الدفع:</p>
+          <div className="mt-3 p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl border border-green-200 dark:border-green-800 space-y-3 animate-in slide-in-from-top duration-300">
+            <p className="text-center text-sm text-gray-600 dark:text-gray-300 font-medium">عنوان الدفع:</p>
             <div 
               onClick={handleCopyPayment}
-              className="bg-white p-3 rounded-xl flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors border border-green-200"
+              className="bg-white dark:bg-gray-800 p-3 rounded-xl flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-green-200 dark:border-green-700"
             >
-              <span className="font-mono text-sm text-gray-800 tracking-wide" dir="ltr">{SHAMCASH_ADDRESS}</span>
+              <span className="font-mono text-sm text-gray-800 dark:text-gray-200 tracking-wide" dir="ltr">{SHAMCASH_ADDRESS}</span>
               {copiedPayment ? (
                 <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
               ) : (
                 <Copy className="w-5 h-5 text-gray-400 flex-shrink-0" />
               )}
             </div>
-            <p className="text-center text-xs text-gray-500">اضغط لنسخ العنوان</p>
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400">اضغط لنسخ العنوان</p>
           </div>
         )}
       </div>
@@ -287,4 +281,4 @@ const UnifiedActivation: React.FC<UnifiedActivationProps> = ({ onSuccess, onBack
   );
 };
 
-export default UnifiedActivation;
+export default LicenseActivation;

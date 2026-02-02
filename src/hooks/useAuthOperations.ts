@@ -90,7 +90,7 @@ export const resolveUserProfile = async (uid: string): Promise<ProfileResolution
     const user: User = {
       id: profile.id,
       name: profile.full_name,
-      email: '',
+      email: profile.email || '',
       role: profile.role as UserRole,
       phone: profile.phone || '',
       employeeType: profile.employee_type as EmployeeType

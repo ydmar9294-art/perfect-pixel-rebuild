@@ -26,6 +26,8 @@ interface AppContextType {
   role: UserRole | null;
   organization: Organization | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
+  needsActivation: boolean;
 
   products: Product[];
   customers: Customer[];
@@ -37,10 +39,8 @@ interface AppContextType {
   deliveries: Delivery[];
   pendingEmployees: PendingEmployee[];
 
-  login: (email: string, pass: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  signUp: (email: string, pass: string, code: string) => Promise<void>;
-  signUpEmployee: (email: string, pass: string, code: string) => Promise<void>;
+  refreshAuth: () => Promise<void>;
   refreshAllData: () => Promise<void>;
 
   notifications: Notification[];
@@ -84,6 +84,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [role, setRole] = useState<UserRole | null>(null);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [needsActivation, setNeedsActivation] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -162,15 +164,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const result = await resolveUserProfile(uid);
     
     if (!result.success) {
-      console.warn('[Auth] Profile resolution failed, signing out');
-      await supabase.auth.signOut();
-      return;
+      console.warn('[Auth] Profile resolution failed - needs activation');
+      setNeedsActivation(true);
+      setIsAuthenticated(true);
+      return false;
     }
 
     setUser(result.user);
     setRole(result.role);
     setOrganization(result.organization);
+    setNeedsActivation(false);
+    setIsAuthenticated(true);
+    return true;
   };
+
+  // ============================================
+  // Refresh Auth (after activation)
+  // ============================================
+
+  const refreshAuth = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await resolveProfile(session.user.id);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // ============================================
   // Auth Initialization
@@ -204,6 +226,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setUser(null);
           setRole(null);
           setOrganization(null);
+          setIsAuthenticated(false);
+          setNeedsActivation(false);
           setIsLoading(false);
           return;
         }
@@ -248,52 +272,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // ============================================
-  // Login - with mutex for race condition prevention
-  // ============================================
-
-  const login = async (email: string, pass: string): Promise<boolean> => {
-    return authMutex.withLock(async () => {
-      isInternalAuthOp.current = true;
-      setIsLoading(true);
-      
-      try {
-        console.log('[Auth] Attempting login for:', email);
-        
-        const { data: signInData, error } = await withTimeout(
-          supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password: pass
-          }),
-          AUTH_TIMEOUT_MS,
-          'انتهت مهلة تسجيل الدخول'
-        );
-        
-        if (error) {
-          console.error('[Auth] Login error:', error.message);
-          throw error;
-        }
-        
-        console.log('[Auth] Login successful, user:', signInData.user?.id);
-        
-        if (signInData.session?.user) {
-          await resolveProfile(signInData.session.user.id);
-          return true;
-        } else {
-          console.warn('[Auth] No session created after login');
-          setIsLoading(false);
-          return false;
-        }
-      } catch (err: any) {
-        console.error('[Auth] Login failed:', err);
-        setIsLoading(false);
-        throw err;
-      } finally {
-        isInternalAuthOp.current = false;
-      }
-    });
-  };
-
-  // ============================================
   // Logout
   // ============================================
 
@@ -306,102 +284,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUser(null);
         setRole(null);
         setOrganization(null);
+        setIsAuthenticated(false);
+        setNeedsActivation(false);
       } finally {
         setIsLoading(false);
-        isInternalAuthOp.current = false;
-      }
-    });
-  };
-
-  // ============================================
-  // Sign Up (Owner with License)
-  // ============================================
-
-  const signUp = async (email: string, pass: string, code: string) => {
-    return authMutex.withLock(async () => {
-      isInternalAuthOp.current = true;
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password: pass
-        });
-
-        let userId: string | null = null;
-
-        if (error) {
-          if (error.message?.includes('already registered') || error.code === 'user_already_exists') {
-            throw new Error('حدث خطأ في التسجيل. يرجى استخدام تسجيل الدخول إذا كان لديك حساب مسبق.');
-          } else {
-            throw error;
-          }
-        } else {
-          userId = data.user?.id || null;
-        }
-
-        if (userId) {
-          const { error: rpcError } = await supabase.rpc('use_license', {
-            p_user_id: userId,
-            p_license_key: code
-          });
-          if (rpcError) throw rpcError;
-
-          addNotification('تم تفعيل الحساب بنجاح', 'success');
-          
-          const { data: session } = await supabase.auth.getSession();
-          if (session.session?.user) {
-            await resolveProfile(session.session.user.id);
-          } else {
-            await login(email, pass);
-          }
-        }
-      } finally {
-        isInternalAuthOp.current = false;
-      }
-    });
-  };
-
-  // ============================================
-  // Sign Up Employee
-  // ============================================
-
-  const signUpEmployee = async (email: string, pass: string, code: string) => {
-    return authMutex.withLock(async () => {
-      isInternalAuthOp.current = true;
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password: pass
-        });
-
-        let userId: string | null = null;
-
-        if (error) {
-          if (error.message?.includes('already registered') || error.code === 'user_already_exists') {
-            throw new Error('حدث خطأ في التسجيل. يرجى استخدام تسجيل الدخول إذا كان لديك حساب مسبق.');
-          } else {
-            throw error;
-          }
-        } else {
-          userId = data.user?.id || null;
-        }
-
-        if (userId) {
-          const { error: rpcError } = await supabase.rpc('activate_employee', {
-            p_user_id: userId,
-            p_activation_code: code
-          });
-          if (rpcError) throw rpcError;
-
-          addNotification('تم تفعيل حساب الموظف بنجاح', 'success');
-          
-          const { data: session } = await supabase.auth.getSession();
-          if (session.session?.user) {
-            await resolveProfile(session.session.user.id);
-          } else {
-            await login(email, pass);
-          }
-        }
-      } finally {
         isInternalAuthOp.current = false;
       }
     });
@@ -428,6 +314,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         role,
         organization,
         isLoading,
+        isAuthenticated,
+        needsActivation,
 
         products,
         customers,
@@ -439,10 +327,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deliveries,
         pendingEmployees,
 
-        login,
         logout,
-        signUp,
-        signUpEmployee,
+        refreshAuth,
         refreshAllData,
         notifications,
         addNotification,
@@ -498,142 +384,123 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         reversePayment: async (pid, r) => {
           try {
-            await supabase.rpc('reverse_payment_rpc', {
-              p_payment_id: pid,
-              p_reason: r
+            await supabase.rpc('reverse_payment_rpc', { p_payment_id: pid, p_reason: r });
+            await refreshAllData();
+          } catch (e) { handleError(e); }
+        },
+
+        addCustomer: async (name, phone, location) => {
+          try {
+            if (!organization?.id) throw new Error('لا توجد منشأة');
+            await supabase.from('customers').insert({
+              name,
+              phone,
+              location,
+              organization_id: organization.id
             });
             await refreshAllData();
           } catch (e) { handleError(e); }
         },
 
-        addCustomer: async (n, p, loc) => {
-          try {
-            const { data: { user: authUser } } = await supabase.auth.getUser();
-            const { error } = await supabase.from('customers').insert({
-              name: n,
-              phone: p || null,
-              location: loc || null,
-              organization_id: organization?.id,
-              created_by: authUser?.id || null
-            });
-            if (error) throw error;
-            await refreshAllData();
-            addNotification('تم إضافة الزبون بنجاح', 'success');
-          } catch (e) { 
-            handleError(e); 
-            throw e;
-          }
-        },
-
-        addDistributor: async (n, p, r, t) => {
+        addDistributor: async (name, phone, role, type) => {
           try {
             const { data, error } = await supabase.rpc('add_employee_rpc', {
-              p_name: n,
-              p_phone: p,
-              p_role: r,
-              p_type: t
+              p_name: name,
+              p_phone: phone,
+              p_role: role,
+              p_type: type
             });
             if (error) throw error;
             await refreshAllData();
-            addNotification('تم إنشاء كود التفعيل', 'success');
-            
-            const { data: pendingData } = await supabase
-              .from('pending_employees')
-              .select('*')
-              .eq('activation_code', data)
-              .single();
-            
-            const employee: PendingEmployee | null = pendingData 
-              ? transformPendingEmployee(pendingData)
-              : null;
-            
-            return { code: data as string, employee };
-          } catch (e) { 
-            handleError(e); 
+            const latest = pendingEmployees.find(e => e.activation_code === data);
+            return { code: data as string, employee: latest || null };
+          } catch (e) {
+            handleError(e);
             return { code: '', employee: null };
           }
         },
 
-        addProduct: async p => {
+        addProduct: async (product) => {
           try {
+            if (!organization?.id) throw new Error('لا توجد منشأة');
             await supabase.from('products').insert({
-              name: p.name,
-              category: p.category,
-              cost_price: p.costPrice,
-              base_price: p.basePrice,
-              stock: p.stock,
-              min_stock: p.minStock,
-              unit: p.unit,
-              organization_id: organization?.id
+              name: product.name,
+              category: product.category,
+              cost_price: product.costPrice,
+              base_price: product.basePrice,
+              stock: product.stock,
+              min_stock: product.minStock,
+              unit: product.unit,
+              organization_id: organization.id
             });
             await refreshAllData();
-            addNotification('تم إضافة الصنف بنجاح', 'success');
           } catch (e) { handleError(e); }
         },
 
-        updateProduct: async p => {
+        updateProduct: async (product) => {
           try {
             await supabase.from('products').update({
-              name: p.name,
-              category: p.category,
-              cost_price: p.costPrice,
-              base_price: p.basePrice,
-              stock: p.stock,
-              min_stock: p.minStock,
-              unit: p.unit
-            }).eq('id', p.id);
+              name: product.name,
+              category: product.category,
+              cost_price: product.costPrice,
+              base_price: product.basePrice,
+              stock: product.stock,
+              min_stock: product.minStock,
+              unit: product.unit
+            }).eq('id', product.id);
             await refreshAllData();
-            addNotification('تم تحديث الصنف بنجاح', 'success');
           } catch (e) { handleError(e); }
         },
 
-        deleteProduct: async id => {
+        deleteProduct: async (id) => {
           try {
             await supabase.from('products').update({ is_deleted: true }).eq('id', id);
             await refreshAllData();
-            addNotification('تم حذف الصنف', 'success');
           } catch (e) { handleError(e); }
         },
 
-        issueLicense: async (o, t, d) => {
+        issueLicense: async (orgName, type, days) => {
           try {
-            await supabase.rpc('issue_license_rpc', {
-              p_org_name: o,
-              p_type: t,
-              p_days: d
+            const { error } = await supabase.rpc('issue_license_rpc', {
+              p_org_name: orgName,
+              p_type: type,
+              p_days: days
             });
+            if (error) throw error;
             await refreshAllData();
             addNotification('تم إصدار الترخيص بنجاح', 'success');
           } catch (e) { handleError(e); }
         },
 
-        updateLicenseStatus: async (id, _, s) => {
+        updateLicenseStatus: async (id, ownerId, status) => {
           try {
-            await supabase.from('developer_licenses').update({ status: s }).eq('id', id);
+            await supabase.from('developer_licenses')
+              .update({ status })
+              .eq('id', id);
             await refreshAllData();
-            addNotification('تم تحديث حالة الترخيص', 'success');
           } catch (e) { handleError(e); }
         },
 
-        makeLicensePermanent: async (id, _) => {
+        makeLicensePermanent: async (id, ownerId) => {
           try {
-            await supabase.from('developer_licenses').update({ type: 'PERMANENT' }).eq('id', id);
+            await supabase.from('developer_licenses')
+              .update({ type: 'PERMANENT', expiryDate: null })
+              .eq('id', id);
             await refreshAllData();
-            addNotification('تم تحويل الترخيص إلى دائم', 'success');
           } catch (e) { handleError(e); }
         },
 
         addPurchase: async (productId, quantity, unitPrice, supplierName, notes) => {
           try {
-            await supabase.rpc('add_purchase_rpc', {
+            const { error } = await supabase.rpc('add_purchase_rpc', {
               p_product_id: productId,
               p_quantity: quantity,
               p_unit_price: unitPrice,
               p_supplier_name: supplierName,
               p_notes: notes
             });
+            if (error) throw error;
             await refreshAllData();
-            addNotification('تم تسجيل عملية الشراء وزيادة المخزون', 'success');
           } catch (e) { handleError(e); }
         },
 
@@ -643,34 +510,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               p_distributor_name: distributorName,
               p_items: items,
               p_notes: notes,
-              p_distributor_id: distributorId || null
+              p_distributor_id: distributorId
             });
             if (error) throw error;
             await refreshAllData();
-            addNotification('تم تسليم البضاعة وخصمها من المخزون', 'success');
-          } catch (e) { 
-            handleError(e); 
-            throw e;
-          }
+          } catch (e) { handleError(e); }
         },
 
         createPurchaseReturn: async (items, reason, supplierName) => {
           try {
-            const formattedItems = items.map(item => ({
-              product_id: item.product_id,
-              product_name: item.product_name,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              total_price: item.quantity * item.unit_price
-            }));
-            
-            await supabase.rpc('create_purchase_return_rpc', {
-              p_items: formattedItems,
+            const { error } = await supabase.rpc('create_purchase_return_rpc', {
+              p_items: items,
               p_reason: reason,
               p_supplier_name: supplierName
             });
+            if (error) throw error;
             await refreshAllData();
-            addNotification('تم تسجيل مرتجع الشراء وخصم المخزون', 'success');
           } catch (e) { handleError(e); }
         }
       }}
@@ -679,6 +534,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     </AppContext.Provider>
   );
 };
+
+// ============================================
+// Context Hook
+// ============================================
 
 export const useApp = () => {
   const ctx = useContext(AppContext);
