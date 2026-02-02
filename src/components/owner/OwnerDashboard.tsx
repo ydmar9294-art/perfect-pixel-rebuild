@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   Phone,
   MapPin,
-  CircleDollarSign
+  CircleDollarSign,
+  Shield
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { CURRENCY } from '@/constants';
@@ -30,8 +31,9 @@ import { EmployeeKPIs } from './EmployeeKPIs';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import AIAssistant from '@/components/ai/AIAssistant';
 import WelcomeSplash from '@/components/ui/WelcomeSplash';
+import LegalInfoTab from './LegalInfoTab';
 
-type OwnerTabType = 'daily' | 'inventory' | 'team' | 'customers' | 'finance';
+type OwnerTabType = 'daily' | 'inventory' | 'team' | 'customers' | 'finance' | 'legal';
 
 const OwnerDashboard: React.FC = () => {
   const { 
@@ -145,6 +147,13 @@ const OwnerDashboard: React.FC = () => {
       icon: <TrendingUp className="w-5 h-5" />,
       color: 'text-purple-600',
       bgColor: 'bg-purple-600'
+    },
+    { 
+      id: 'legal', 
+      label: 'القانونية', 
+      icon: <Shield className="w-5 h-5" />,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-600'
     },
   ];
 
@@ -465,6 +474,13 @@ const OwnerDashboard: React.FC = () => {
             <div className="bg-white rounded-3xl shadow-sm p-4">
               <FinanceTab />
             </div>
+          </div>
+        )}
+
+        {/* Legal Info Tab */}
+        {activeTab === 'legal' && (
+          <div className="animate-fade-in">
+            <LegalInfoTab />
           </div>
         )}
       </div>
