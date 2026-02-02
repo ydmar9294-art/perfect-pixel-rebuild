@@ -160,7 +160,7 @@ const OwnerDashboard: React.FC = () => {
         {/* Top Header */}
         <div className="bg-gray-50 pt-4 px-4 relative">
           {/* Notification Center - Top Right Corner */}
-          <div className="absolute top-2 left-2">
+          <div className="absolute -top-1 left-1 z-10">
             <NotificationCenter />
           </div>
 
