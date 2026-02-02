@@ -234,7 +234,7 @@ const AIAssistant: React.FC<{ className?: string }> = ({ className }) => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className={`p-2.5 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl shadow-md text-white hover:from-purple-600 hover:to-blue-700 transition-all active:scale-95 ${className || ''}`}
+        className={`p-1.5 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg text-white hover:from-purple-600 hover:to-blue-700 transition-all active:scale-95 ${className || ''}`}
         title="المساعد الذكي"
         type="button"
       >
