@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   Clock,
   ShieldCheck,
-  MessageCircle
+  MessageCircle,
+  Sparkles
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { CURRENCY } from '@/constants';
@@ -25,6 +26,7 @@ import { InventoryTab } from './InventoryTab';
 import { FinanceTab } from './FinanceTab';
 import { EmployeeKPIs } from './EmployeeKPIs';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import AIAssistant from '@/components/ai/AIAssistant';
 
 type OwnerTabType = 'daily' | 'inventory' | 'team' | 'customers' | 'finance';
 
@@ -179,8 +181,9 @@ const OwnerDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Right: Support & Notification */}
+            {/* Right: AI Assistant, Support & Notification */}
             <div className="flex items-center gap-2">
+              <AIAssistant />
               <a
                 href="https://wa.me/963947744162"
                 target="_blank"
