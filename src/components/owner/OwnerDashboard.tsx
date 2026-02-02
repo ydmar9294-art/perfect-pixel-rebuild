@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   Clock,
   ShieldCheck,
-  MessageCircle
+  MessageCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { CURRENCY } from '@/constants';
@@ -34,7 +35,8 @@ const OwnerDashboard: React.FC = () => {
     sales = [], 
     payments = [], 
     customers = [], 
-    users = [], 
+    users = [],
+    products = [],
     logout, 
     addDistributor, 
     pendingEmployees = [] 
@@ -246,24 +248,53 @@ const OwnerDashboard: React.FC = () => {
             {/* ERP Quick Stats - Professional Grid */}
             <div className="bg-white p-4 rounded-2xl shadow-sm">
               <h3 className="font-bold text-gray-800 mb-3 text-sm">ملخص النظام</h3>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-gray-50 p-3 rounded-xl text-center">
-                  <FileText className="w-5 h-5 mx-auto text-blue-500 mb-1" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-blue-50 p-3 rounded-xl text-center">
+                  <FileText className="w-5 h-5 mx-auto text-blue-600 mb-1" />
                   <p className="text-lg font-black text-gray-800">{sales.filter(s => s.timestamp >= new Date().setHours(0,0,0,0)).length}</p>
-                  <p className="text-[8px] text-gray-400 font-bold">فواتير اليوم</p>
+                  <p className="text-[8px] text-gray-500 font-bold">فواتير اليوم</p>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-xl text-center">
-                  <Users className="w-5 h-5 mx-auto text-emerald-500 mb-1" />
+                <div className="bg-emerald-50 p-3 rounded-xl text-center">
+                  <Wallet className="w-5 h-5 mx-auto text-emerald-600 mb-1" />
+                  <p className="text-lg font-black text-gray-800">{payments.filter(p => p.timestamp >= new Date().setHours(0,0,0,0) && !p.isReversed).length}</p>
+                  <p className="text-[8px] text-gray-500 font-bold">تحصيلات اليوم</p>
+                </div>
+                <div className="bg-purple-50 p-3 rounded-xl text-center">
+                  <Users className="w-5 h-5 mx-auto text-purple-600 mb-1" />
                   <p className="text-lg font-black text-gray-800">{customers.length}</p>
-                  <p className="text-[8px] text-gray-400 font-bold">إجمالي الزبائن</p>
+                  <p className="text-[8px] text-gray-500 font-bold">إجمالي الزبائن</p>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-xl text-center">
-                  <Package className="w-5 h-5 mx-auto text-orange-500 mb-1" />
+                <div className="bg-orange-50 p-3 rounded-xl text-center">
+                  <Package className="w-5 h-5 mx-auto text-orange-600 mb-1" />
                   <p className="text-lg font-black text-gray-800">{teamMembers.length}</p>
-                  <p className="text-[8px] text-gray-400 font-bold">الموظفين النشطين</p>
+                  <p className="text-[8px] text-gray-500 font-bold">الموظفين النشطين</p>
                 </div>
               </div>
             </div>
+
+            {/* Low Stock Alert */}
+            {products.filter(p => p.stock <= p.minStock && !p.isDeleted).length > 0 && (
+              <div className="bg-white p-4 rounded-2xl shadow-sm border-r-4 border-red-500">
+                <h3 className="font-bold text-gray-800 mb-3 text-sm flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-500" />
+                  منتجات قاربت على النفاد
+                </h3>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {products
+                    .filter(p => p.stock <= p.minStock && !p.isDeleted)
+                    .slice(0, 5)
+                    .map(p => (
+                      <div key={p.id} className="flex justify-between items-center bg-red-50 p-2 rounded-lg">
+                        <span className="font-bold text-xs text-gray-800">{p.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-red-600 font-black">{p.stock}</span>
+                          <span className="text-[8px] text-gray-400">/ {p.minStock}</span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
             
             {/* Employee KPIs */}
             <EmployeeKPIs />
