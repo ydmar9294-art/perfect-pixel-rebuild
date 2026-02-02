@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, X, Send, Loader2, MessageCircle } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -41,16 +42,30 @@ const AIAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
     setIsLoading(true);
 
     try {
+      // Use the signed-in user's access token (NOT the publishable key)
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error('يرجى تسجيل الدخول لاستخدام المساعد الذكي');
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          // The platform still expects apikey for routing; authorization must be the user's JWT
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ messages: [...messages, userMessage] }),
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('انتهت الجلسة أو لم يتم تسجيل الدخول. يرجى تسجيل الدخول ثم المحاولة مرة أخرى');
+        }
         if (response.status === 429) {
           throw new Error('تم تجاوز الحد المسموح للطلبات، يرجى المحاولة لاحقاً');
         }
