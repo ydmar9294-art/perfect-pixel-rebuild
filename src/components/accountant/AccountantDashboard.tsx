@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
-import WelcomeBanner from '@/components/ui/WelcomeBanner';
+import WelcomeSplash from '@/components/ui/WelcomeSplash';
 import SalesInvoicesTab from './SalesInvoicesTab';
 import PurchasesTab from './PurchasesTab';
 import SalesReturnsTab from './SalesReturnsTab';
@@ -180,10 +180,8 @@ const AccountantDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Welcome Banner */}
-      <div className="flex-shrink-0 px-3 pb-2">
-        <WelcomeBanner />
-      </div>
+      {/* Welcome Splash */}
+      <WelcomeSplash />
 
       {/* Tab Navigation - Horizontal scrollable pills */}
       <div className="flex-shrink-0 px-3 pb-2">

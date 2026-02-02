@@ -26,7 +26,7 @@ import { FinanceTab } from './FinanceTab';
 import { EmployeeKPIs } from './EmployeeKPIs';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import AIAssistant from '@/components/ai/AIAssistant';
-import WelcomeBanner from '@/components/ui/WelcomeBanner';
+import WelcomeSplash from '@/components/ui/WelcomeSplash';
 
 type OwnerTabType = 'daily' | 'inventory' | 'team' | 'customers' | 'finance';
 
@@ -196,10 +196,8 @@ const OwnerDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Welcome Banner */}
-        <div className="px-4 pb-4">
-          <WelcomeBanner />
-        </div>
+        {/* Welcome Splash */}
+        <WelcomeSplash />
 
         {/* Tab Navigation - Pill Style */}
         <div className="px-4 pb-4">

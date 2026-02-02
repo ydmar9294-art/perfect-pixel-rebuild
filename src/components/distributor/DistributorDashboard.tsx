@@ -19,7 +19,7 @@ import {
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
 import AIAssistant from '@/components/ai/AIAssistant';
-import WelcomeBanner from '@/components/ui/WelcomeBanner';
+import WelcomeSplash from '@/components/ui/WelcomeSplash';
 import NewSaleTab from './NewSaleTab';
 import SalesReturnTab from './SalesReturnTab';
 import CollectionTab from './CollectionTab';
@@ -222,10 +222,8 @@ const DistributorDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Welcome Banner */}
-      <div className="px-4 pb-4">
-        <WelcomeBanner />
-      </div>
+      {/* Welcome Splash */}
+      <WelcomeSplash />
 
       {/* Tab Navigation - Pill Style */}
       <div className="px-4 pb-4">
