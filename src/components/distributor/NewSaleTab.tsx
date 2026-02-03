@@ -154,7 +154,19 @@ const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
 
     setLoading(true);
     try {
-      await createSale(selectedCustomer.id, cart);
+      // Call RPC with payment type
+      const { data, error } = await supabase.rpc('create_sale_rpc', {
+        p_customer_id: selectedCustomer.id,
+        p_items: cart.map(item => ({
+          product_id: item.product_id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price
+        })),
+        p_payment_type: paymentType
+      });
+
+      if (error) throw error;
       
       // Store sale data for printing
       setLastSaleData({

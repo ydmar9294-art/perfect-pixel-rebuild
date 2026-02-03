@@ -260,6 +260,83 @@ export type Database = {
           },
         ]
       }
+      invoice_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_id: string | null
+          customer_name: string
+          grand_total: number
+          id: string
+          invoice_date: string
+          invoice_number: string
+          invoice_type: string
+          items: Json
+          legal_info: Json | null
+          notes: string | null
+          org_name: string | null
+          organization_id: string
+          paid_amount: number | null
+          payment_type: string | null
+          reason: string | null
+          reference_id: string
+          remaining: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string | null
+          customer_name: string
+          grand_total?: number
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          invoice_type: string
+          items?: Json
+          legal_info?: Json | null
+          notes?: string | null
+          org_name?: string | null
+          organization_id: string
+          paid_amount?: number | null
+          payment_type?: string | null
+          reason?: string | null
+          reference_id: string
+          remaining?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          grand_total?: number
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          invoice_type?: string
+          items?: Json
+          legal_info?: Json | null
+          notes?: string | null
+          org_name?: string | null
+          organization_id?: string
+          paid_amount?: number | null
+          payment_type?: string | null
+          reason?: string | null
+          reference_id?: string
+          remaining?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_snapshots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       login_attempts: {
         Row: {
           attempted_at: string
@@ -1100,15 +1177,25 @@ export type Database = {
         Args: { p_items: Json; p_reason?: string; p_supplier_name?: string }
         Returns: string
       }
-      create_sale_rpc: {
-        Args: { p_customer_id: string; p_items: Json }
-        Returns: string
-      }
+      create_sale_rpc:
+        | { Args: { p_customer_id: string; p_items: Json }; Returns: string }
+        | {
+            Args: {
+              p_customer_id: string
+              p_items: Json
+              p_payment_type?: string
+            }
+            Returns: string
+          }
       create_sales_return_rpc: {
         Args: { p_items: Json; p_reason?: string; p_sale_id: string }
         Returns: string
       }
       developer_exists: { Args: never; Returns: boolean }
+      generate_invoice_number: {
+        Args: { p_org_id: string; p_type: string }
+        Returns: string
+      }
       generate_license_key: { Args: never; Returns: string }
       get_user_organization_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
@@ -1133,6 +1220,22 @@ export type Database = {
       reverse_payment_rpc: {
         Args: { p_payment_id: string; p_reason: string }
         Returns: undefined
+      }
+      save_invoice_snapshot: {
+        Args: {
+          p_customer_id: string
+          p_customer_name: string
+          p_grand_total: number
+          p_items?: Json
+          p_notes?: string
+          p_paid_amount?: number
+          p_payment_type?: string
+          p_reason?: string
+          p_reference_id: string
+          p_remaining?: number
+          p_type: string
+        }
+        Returns: string
       }
       secure_generate_license_key: { Args: never; Returns: string }
       use_license: {
