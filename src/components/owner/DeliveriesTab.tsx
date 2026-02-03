@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { CURRENCY } from '@/constants';
-import { Truck, Plus, X, Package, Calendar, User, Check, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Truck, Plus, X, Package, Calendar, User, Check, Trash2, Loader2, AlertCircle, Eye } from 'lucide-react';
 import { EmployeeType } from '@/types';
+import DeliveryDetailsModal from './DeliveryDetailsModal';
 
 interface DeliveryItem {
   product_id: string;
@@ -26,6 +27,7 @@ interface DistributorOption {
 
 export const DeliveriesTab: React.FC = () => {
   const { products, users, createDelivery, deliveries = [], addNotification } = useApp();
+  const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedDistributorId, setSelectedDistributorId] = useState('');
   const [distributorName, setDistributorName] = useState('');
@@ -169,9 +171,18 @@ export const DeliveriesTab: React.FC = () => {
                     {new Date(delivery.created_at).toLocaleDateString('ar-EG')}
                   </p>
                 </div>
-                <span className={`badge ${delivery.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>
-                  {delivery.status === 'completed' ? 'مكتمل' : 'معلق'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedDelivery(delivery)}
+                    className="p-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors"
+                    title="عرض التفاصيل"
+                  >
+                    <Eye size={18} />
+                  </button>
+                  <span className={`badge ${delivery.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>
+                    {delivery.status === 'completed' ? 'مكتمل' : 'معلق'}
+                  </span>
+                </div>
               </div>
               {delivery.notes && (
                 <p className="text-xs text-muted-foreground bg-muted p-2 rounded-lg">{delivery.notes}</p>
@@ -180,6 +191,17 @@ export const DeliveriesTab: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* Delivery Details Modal */}
+      {selectedDelivery && (
+        <DeliveryDetailsModal
+          deliveryId={selectedDelivery.id}
+          distributorName={selectedDelivery.distributor_name}
+          createdAt={selectedDelivery.created_at}
+          notes={selectedDelivery.notes}
+          onClose={() => setSelectedDelivery(null)}
+        />
+      )}
 
       {/* Modal تسليم بضاعة */}
       {showModal && (
