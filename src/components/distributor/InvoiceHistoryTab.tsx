@@ -195,7 +195,7 @@ const InvoiceHistoryTab: React.FC = () => {
   ];
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Print Modal */}
       {showPrintModal && selectedInvoice && (
         <InvoiceHistoryPrint
@@ -204,165 +204,163 @@ const InvoiceHistoryTab: React.FC = () => {
         />
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-black text-gray-800">سجل الفواتير</h3>
-        <button
-          onClick={() => fetchInvoices(true)}
-          disabled={refreshing}
-          className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
-        >
-          <RefreshCw className={`w-5 h-5 text-gray-600 ${refreshing ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input
-          type="text"
-          placeholder="بحث بالعميل أو رقم الفاتورة..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-gray-50 border-none rounded-xl px-12 py-3 font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-        />
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-colors ${showFilters ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
-        >
-          <Filter className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Filter Buttons */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {filterButtons.map((btn) => (
+      {/* Header - Compact */}
+      <div className="shrink-0 px-4 pt-4 pb-2">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-black text-foreground">سجل الفواتير</h3>
           <button
-            key={btn.id}
-            onClick={() => setFilter(btn.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${
-              filter === btn.id
-                ? `${btn.color} text-white shadow-md`
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            onClick={() => fetchInvoices(true)}
+            disabled={refreshing}
+            className="p-2 bg-muted rounded-xl hover:bg-muted/80 transition-colors"
           >
-            {btn.icon}
-            {btn.label}
+            <RefreshCw className={`w-4 h-4 text-muted-foreground ${refreshing ? 'animate-spin' : ''}`} />
           </button>
-        ))}
-      </div>
+        </div>
 
-      {/* Date Filters (Collapsible) */}
-      {showFilters && (
-        <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <Calendar className="w-4 h-4" />
-            <span className="font-bold">تصفية بالتاريخ</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">من تاريخ</label>
+        {/* Search - Compact */}
+        <div className="relative mb-3">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="بحث بالعميل أو رقم الفاتورة..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-muted border-none rounded-xl pr-10 pl-10 py-2.5 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-colors ${showFilters ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Filter Buttons - Horizontal scroll, compact */}
+        <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+          {filterButtons.map((btn) => (
+            <button
+              key={btn.id}
+              onClick={() => setFilter(btn.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap transition-all shrink-0 ${
+                filter === btn.id
+                  ? `${btn.color} text-white shadow-sm`
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              {React.cloneElement(btn.icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
+              {btn.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Date Filters (Collapsible) - Compact */}
+        {showFilters && (
+          <div className="bg-muted rounded-xl p-3 mt-2 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Calendar className="w-3.5 h-3.5" />
+                <span className="font-bold">تصفية بالتاريخ</span>
+              </div>
+              {(dateFrom || dateTo) && (
+                <button
+                  onClick={() => { setDateFrom(''); setDateTo(''); }}
+                  className="text-[10px] text-destructive font-bold"
+                >
+                  مسح
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
               <input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs"
               />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">إلى تاريخ</label>
               <input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs"
               />
             </div>
           </div>
-          {(dateFrom || dateTo) && (
-            <button
-              onClick={() => { setDateFrom(''); setDateTo(''); }}
-              className="text-xs text-red-500 hover:text-red-600"
-            >
-              مسح التاريخ
-            </button>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Invoice List */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-          <p className="text-gray-500 font-medium">جارٍ تحميل السجل...</p>
-        </div>
-      ) : filteredInvoices.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <FileText className="w-16 h-16 mx-auto mb-3 opacity-30" />
-          <p className="font-bold">لا توجد فواتير</p>
-          <p className="text-sm mt-1">سيظهر هنا سجل فواتيرك عند إنشائها</p>
-        </div>
-      ) : (
-        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-          {filteredInvoices.map((invoice) => (
-            <div
-              key={invoice.id}
-              className="bg-gray-50 rounded-2xl p-4 hover:bg-gray-100 transition-colors"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  {/* Type Badge & Number */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${getTypeColor(invoice.invoice_type)}`}>
-                      {getTypeIcon(invoice.invoice_type)}
-                      {getTypeName(invoice.invoice_type)}
-                    </span>
-                    <span className="text-xs text-gray-400 font-mono">{invoice.invoice_number}</span>
+      {/* Invoice List - Scrollable */}
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
+            <p className="text-muted-foreground text-sm font-medium">جارٍ تحميل السجل...</p>
+          </div>
+        ) : filteredInvoices.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
+            <p className="font-bold text-sm">لا توجد فواتير</p>
+            <p className="text-xs mt-1">سيظهر هنا سجل فواتيرك عند إنشائها</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredInvoices.map((invoice) => (
+              <div
+                key={invoice.id}
+                className="bg-muted rounded-xl p-3 active:scale-[0.99] transition-transform"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    {/* Type Badge & Number */}
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${getTypeColor(invoice.invoice_type)}`}>
+                        {React.cloneElement(getTypeIcon(invoice.invoice_type), { className: 'w-3 h-3' })}
+                        {getTypeName(invoice.invoice_type)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono truncate">{invoice.invoice_number}</span>
+                    </div>
+                    
+                    {/* Customer Name */}
+                    <p className="font-bold text-sm text-foreground truncate">{invoice.customer_name}</p>
+                    
+                    {/* Date */}
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {new Date(invoice.invoice_date).toLocaleDateString('ar-SA')} - {new Date(invoice.invoice_date).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
                   
-                  {/* Customer Name */}
-                  <p className="font-bold text-gray-800 truncate">{invoice.customer_name}</p>
-                  
-                  {/* Date */}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(invoice.invoice_date).toLocaleDateString('ar-SA')} - {new Date(invoice.invoice_date).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {/* Amount */}
+                    <p className={`font-black text-base ${invoice.invoice_type === 'return' ? 'text-orange-600' : 'text-emerald-600'}`}>
+                      {invoice.invoice_type === 'return' ? '-' : ''}{Number(invoice.grand_total).toLocaleString('ar-SA')}
+                    </p>
+                    <span className="text-[10px] text-muted-foreground">{CURRENCY}</span>
+                    
+                    {/* Payment Status for sales */}
+                    {invoice.invoice_type === 'sale' && invoice.payment_type && (
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                        invoice.payment_type === 'CASH' 
+                          ? 'bg-emerald-100 text-emerald-700' 
+                          : 'bg-orange-100 text-orange-700'
+                      }`}>
+                        {invoice.payment_type === 'CASH' ? 'نقداً' : 'آجل'}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
-                <div className="flex flex-col items-end gap-2">
-                  {/* Amount */}
-                  <p className={`font-black text-lg ${invoice.invoice_type === 'return' ? 'text-orange-600' : 'text-emerald-600'}`}>
-                    {invoice.invoice_type === 'return' ? '-' : ''}{Number(invoice.grand_total).toLocaleString('ar-SA')}
-                  </p>
-                  <span className="text-xs text-gray-400">{CURRENCY}</span>
-                  
-                  {/* Payment Status for sales */}
-                  {invoice.invoice_type === 'sale' && invoice.payment_type && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                      invoice.payment_type === 'CASH' 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-orange-100 text-orange-700'
-                    }`}>
-                      {invoice.payment_type === 'CASH' ? 'نقداً' : 'آجل'}
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              {/* Actions */}
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200">
+                {/* Print Button - Compact */}
                 <button
                   onClick={() => handlePrint(invoice)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-100 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-200 transition-colors"
+                  className="w-full flex items-center justify-center gap-1.5 mt-2 py-2 bg-primary/10 text-primary rounded-lg font-bold text-xs hover:bg-primary/20 transition-colors"
                 >
-                  <Printer className="w-4 h-4" />
-                  طباعة
+                  <Printer className="w-3.5 h-3.5" />
+                  طباعة الفاتورة
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
