@@ -49,6 +49,7 @@ export const InventoryTab: React.FC = () => {
 
   // Delivery Modal State
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [selectedDistributorId, setSelectedDistributorId] = useState('');
   const [distributorName, setDistributorName] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [deliveryItems, setDeliveryItems] = useState<DeliveryItem[]>([]);
@@ -120,13 +121,18 @@ export const InventoryTab: React.FC = () => {
 
   const handleDeliverySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!distributorName || deliveryItems.length === 0) return;
-    await createDelivery(distributorName, deliveryItems, deliveryNotes || undefined);
+    // بعد إصلاح الفلو: لازم موزع فعلي (id) لضمان تحديث مخزون الموزع
+    if (!selectedDistributorId || deliveryItems.length === 0) return;
+
+    const selected = distributors.find(d => d.id === selectedDistributorId);
+    const officialName = selected?.name || distributorName;
+    await createDelivery(officialName, deliveryItems, deliveryNotes || undefined, selectedDistributorId);
     setShowDeliveryModal(false);
     resetDeliveryForm();
   };
 
   const resetDeliveryForm = () => {
+    setSelectedDistributorId('');
     setDistributorName('');
     setDeliveryNotes('');
     setDeliveryItems([]);
@@ -467,12 +473,24 @@ export const InventoryTab: React.FC = () => {
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">الموزع</label>
                 {distributors.length > 0 ? (
-                  <select value={distributorName} onChange={(e) => setDistributorName(e.target.value)} required className="input-field">
+                  <select
+                    value={selectedDistributorId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setSelectedDistributorId(id);
+                      const d = distributors.find(x => x.id === id);
+                      setDistributorName(d?.name || '');
+                    }}
+                    required
+                    className="input-field"
+                  >
                     <option value="">اختر الموزع...</option>
-                    {distributors.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                    {distributors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 ) : (
-                  <input type="text" value={distributorName} onChange={(e) => setDistributorName(e.target.value)} required placeholder="اسم الموزع" className="input-field" />
+                  <div className="bg-muted p-3 rounded-xl text-xs text-muted-foreground font-bold">
+                    لا يوجد موزعين مُفعّلين حالياً. أضف موزع جديد ثم فعّل حسابه قبل تنفيذ التسليم.
+                  </div>
                 )}
               </div>
 
@@ -516,7 +534,7 @@ export const InventoryTab: React.FC = () => {
                 </div>
               )}
 
-              <button type="submit" disabled={deliveryItems.length === 0} className="w-full bg-primary text-primary-foreground font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50">
+              <button type="submit" disabled={deliveryItems.length === 0 || !selectedDistributorId} className="w-full bg-primary text-primary-foreground font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50">
                 <Check size={18} className="inline ml-2" />
                 تأكيد التسليم
               </button>
