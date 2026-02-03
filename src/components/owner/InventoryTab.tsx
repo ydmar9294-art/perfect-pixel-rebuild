@@ -411,67 +411,119 @@ export const InventoryTab: React.FC = () => {
         </div>
       )}
 
-      {/* Purchase Modal */}
+      {/* Purchase Modal - Full Screen on Mobile */}
       {showPurchaseModal && (
-        <div className="modal-overlay p-4">
-          <div className="bg-card rounded-[2.5rem] w-full max-w-md shadow-2xl animate-zoom-in overflow-hidden max-h-[85vh] overflow-y-auto">
-            <div className="p-5 bg-success text-white flex justify-between items-center sticky top-0 z-10">
-              <h2 className="text-lg font-black flex items-center gap-2">
-                <ShoppingCart size={20} /> شراء مواد
+        <div className="fixed inset-0 z-50 flex flex-col bg-background md:bg-black/50 md:backdrop-blur-sm md:items-center md:justify-center md:p-6">
+          <div className="flex flex-col w-full h-full md:h-auto md:max-h-[90vh] md:w-full md:max-w-2xl md:rounded-3xl md:shadow-2xl bg-card overflow-hidden animate-fade-in md:animate-zoom-in">
+            {/* Header */}
+            <div className="bg-success text-white px-5 py-4 md:py-5 flex items-center justify-between shrink-0">
+              <h2 className="text-lg md:text-xl font-black flex items-center gap-3">
+                <ShoppingCart size={24} /> شراء مواد
               </h2>
-              <button onClick={() => { setShowPurchaseModal(false); resetPurchaseForm(); }} className="text-white/50 p-1">
-                <X size={22} />
+              <button 
+                onClick={() => { setShowPurchaseModal(false); resetPurchaseForm(); }} 
+                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+              >
+                <X size={24} />
               </button>
             </div>
-            <form onSubmit={handlePurchaseSubmit} className="p-5 space-y-4 text-end">
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">المادة</label>
-                <select value={purchaseProduct} onChange={(e) => handlePurchaseProductChange(e.target.value)} required className="input-field">
+            
+            {/* Body */}
+            <form onSubmit={handlePurchaseSubmit} className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-muted-foreground uppercase">المادة</label>
+                <select 
+                  value={purchaseProduct} 
+                  onChange={(e) => handlePurchaseProductChange(e.target.value)} 
+                  required 
+                  className="input-field text-base py-4"
+                >
                   <option value="">اختر المادة...</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">الكمية</label>
-                  <input type="number" min="1" value={purchaseQty} onChange={(e) => setPurchaseQty(Number(e.target.value))} required className="input-field" />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-muted-foreground uppercase">الكمية</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    value={purchaseQty} 
+                    onChange={(e) => setPurchaseQty(Number(e.target.value))} 
+                    required 
+                    className="input-field text-center text-lg font-black py-4" 
+                  />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">سعر الوحدة</label>
-                  <input type="number" min="0" step="0.01" value={purchasePrice} onChange={(e) => setPurchasePrice(Number(e.target.value))} required className="input-field" />
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-muted-foreground uppercase">سعر الوحدة</label>
+                  <input 
+                    type="number" 
+                    min="0" 
+                    step="0.01" 
+                    value={purchasePrice} 
+                    onChange={(e) => setPurchasePrice(Number(e.target.value))} 
+                    required 
+                    className="input-field text-center text-lg font-black py-4" 
+                  />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">المورد</label>
-                <input type="text" value={purchaseSupplier} onChange={(e) => setPurchaseSupplier(e.target.value)} placeholder="اختياري" className="input-field" />
+              
+              <div className="space-y-2">
+                <label className="text-xs font-black text-muted-foreground uppercase">المورد (اختياري)</label>
+                <input 
+                  type="text" 
+                  value={purchaseSupplier} 
+                  onChange={(e) => setPurchaseSupplier(e.target.value)} 
+                  placeholder="اسم المورد" 
+                  className="input-field py-4" 
+                />
               </div>
-              <div className="bg-success/10 p-3 rounded-xl border border-success/20 flex justify-between items-center">
-                <span className="font-bold text-muted-foreground text-sm">الإجمالي:</span>
-                <span className="text-xl font-black text-success">{(purchaseQty * purchasePrice).toLocaleString()} {CURRENCY}</span>
+              
+              <div className="bg-success/10 p-4 md:p-5 rounded-2xl border border-success/20 flex justify-between items-center">
+                <span className="font-bold text-muted-foreground">الإجمالي:</span>
+                <span className="text-2xl md:text-3xl font-black text-success">{(purchaseQty * purchasePrice).toLocaleString()} {CURRENCY}</span>
               </div>
-              <button type="submit" className="w-full bg-success text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+            </form>
+            
+            {/* Footer */}
+            <div className="shrink-0 p-5 md:p-6 pt-0 border-t border-border bg-card">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  const form = e.currentTarget.closest('.flex-col')?.querySelector('form');
+                  if (form) form.requestSubmit();
+                }}
+                className="w-full bg-success text-white font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all text-lg"
+              >
                 تأكيد الشراء
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Delivery Modal */}
+      {/* Delivery Modal - Full Screen on Mobile */}
       {showDeliveryModal && (
-        <div className="modal-overlay p-4">
-          <div className="bg-card rounded-[2.5rem] w-full max-w-md shadow-2xl animate-zoom-in overflow-hidden max-h-[85vh] overflow-y-auto">
-            <div className="p-5 bg-primary text-primary-foreground flex justify-between items-center sticky top-0 z-10">
-              <h2 className="text-lg font-black flex items-center gap-2">
-                <Truck size={20} /> تسليم للموزع
+        <div className="fixed inset-0 z-50 flex flex-col bg-background md:bg-black/50 md:backdrop-blur-sm md:items-center md:justify-center md:p-6">
+          <div className="flex flex-col w-full h-full md:h-auto md:max-h-[90vh] md:w-full md:max-w-2xl md:rounded-3xl md:shadow-2xl bg-card overflow-hidden animate-fade-in md:animate-zoom-in">
+            {/* Header */}
+            <div className="bg-primary text-primary-foreground px-5 py-4 md:py-5 flex items-center justify-between shrink-0">
+              <h2 className="text-lg md:text-xl font-black flex items-center gap-3">
+                <Truck size={24} /> تسليم للموزع
               </h2>
-              <button onClick={() => { setShowDeliveryModal(false); resetDeliveryForm(); }} className="text-primary-foreground/50 p-1">
-                <X size={22} />
+              <button 
+                onClick={() => { setShowDeliveryModal(false); resetDeliveryForm(); }} 
+                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+              >
+                <X size={24} />
               </button>
             </div>
-            <form onSubmit={handleDeliverySubmit} className="p-5 space-y-4 text-end">
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">الموزع</label>
+            
+            {/* Body */}
+            <form onSubmit={handleDeliverySubmit} className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-muted-foreground uppercase">الموزع</label>
                 {distributors.length > 0 ? (
                   <select
                     value={selectedDistributorId}
@@ -482,24 +534,30 @@ export const InventoryTab: React.FC = () => {
                       setDistributorName(d?.name || '');
                     }}
                     required
-                    className="input-field"
+                    className="input-field text-base py-4"
                   >
                     <option value="">اختر الموزع...</option>
                     {distributors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 ) : (
-                  <div className="bg-muted p-3 rounded-xl text-xs text-muted-foreground font-bold">
+                  <div className="bg-muted p-4 rounded-2xl text-sm text-muted-foreground font-bold text-center">
                     لا يوجد موزعين مُفعّلين حالياً. أضف موزع جديد ثم فعّل حسابه قبل تنفيذ التسليم.
                   </div>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">إضافة أصناف</label>
-                <div className="flex gap-2">
-                  <select value={selectedDeliveryProduct} onChange={(e) => setSelectedDeliveryProduct(e.target.value)} className="input-field flex-1">
-                    <option value="">اختر...</option>
-                    {products.filter(p => p.stock > 0).map(p => <option key={p.id} value={p.id}>{p.name} ({p.stock})</option>)}
+              <div className="space-y-3">
+                <label className="text-xs font-black text-muted-foreground uppercase">إضافة أصناف</label>
+                <div className="flex gap-3">
+                  <select 
+                    value={selectedDeliveryProduct} 
+                    onChange={(e) => setSelectedDeliveryProduct(e.target.value)} 
+                    className="input-field flex-1 py-4"
+                  >
+                    <option value="">اختر المادة...</option>
+                    {products.filter(p => p.stock > 0).map(p => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.stock})</option>
+                    ))}
                   </select>
                   <input 
                     type="text" 
@@ -510,118 +568,152 @@ export const InventoryTab: React.FC = () => {
                       const val = e.target.value.replace(/\D/g, '');
                       setDeliveryItemQty(val ? Number(val) : 1);
                     }} 
-                    className="w-20 h-10 text-center text-lg font-black bg-card border-2 border-primary/30 rounded-xl text-foreground focus:border-primary focus:outline-none" 
+                    className="w-20 text-center text-xl font-black bg-card border-2 border-primary/30 rounded-xl text-foreground focus:border-primary focus:outline-none py-4" 
                   />
-                  <button type="button" onClick={addDeliveryItem} className="px-3 bg-primary text-primary-foreground rounded-xl">
-                    <Plus size={18} />
+                  <button 
+                    type="button" 
+                    onClick={addDeliveryItem} 
+                    className="px-5 bg-primary text-primary-foreground rounded-xl active:scale-95 transition-transform"
+                  >
+                    <Plus size={22} />
                   </button>
                 </div>
               </div>
 
               {deliveryItems.length > 0 && (
-                <div className="space-y-2 bg-muted p-3 rounded-xl">
+                <div className="space-y-3 bg-muted p-4 rounded-2xl">
+                  <p className="text-xs font-black text-muted-foreground uppercase">الأصناف المختارة ({deliveryItems.length}):</p>
                   {deliveryItems.map((item) => (
-                    <div key={item.product_id} className="flex justify-between items-center bg-card p-2 rounded-lg">
-                      <span className="font-bold text-xs">{item.product_name}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="bg-primary/10 text-primary px-2 py-0.5 rounded font-black text-xs">{item.quantity}</span>
-                        <button type="button" onClick={() => removeDeliveryItem(item.product_id)} className="text-destructive p-1">
-                          <Trash2 size={14} />
+                    <div key={item.product_id} className="flex justify-between items-center bg-card p-3 md:p-4 rounded-xl">
+                      <span className="font-bold">{item.product_name}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-black">{item.quantity}</span>
+                        <button 
+                          type="button" 
+                          onClick={() => removeDeliveryItem(item.product_id)} 
+                          className="text-destructive p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-
-              <button type="submit" disabled={deliveryItems.length === 0 || !selectedDistributorId} className="w-full bg-primary text-primary-foreground font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50">
-                <Check size={18} className="inline ml-2" />
+            </form>
+            
+            {/* Footer */}
+            <div className="shrink-0 p-5 md:p-6 pt-0 border-t border-border bg-card">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  const form = e.currentTarget.closest('.flex-col')?.querySelector('form');
+                  if (form) form.requestSubmit();
+                }}
+                disabled={deliveryItems.length === 0 || !selectedDistributorId}
+                className="w-full bg-primary text-primary-foreground font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-lg flex items-center justify-center gap-2"
+              >
+                <Check size={22} />
                 تأكيد التسليم
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Purchase Return Modal */}
+      {/* Purchase Return Modal - Full Screen on Mobile */}
       {showPurchaseReturnModal && (
-        <div className="modal-overlay p-4">
-          <div className="bg-card rounded-[2.5rem] w-full max-w-md shadow-2xl animate-zoom-in overflow-hidden max-h-[85vh] overflow-y-auto">
-            <div className="p-5 bg-destructive text-white flex justify-between items-center sticky top-0 z-10">
-              <h2 className="text-lg font-black flex items-center gap-2">
-                <RotateCcw size={20} /> مرتجع شراء
+        <div className="fixed inset-0 z-50 flex flex-col bg-background md:bg-black/50 md:backdrop-blur-sm md:items-center md:justify-center md:p-6">
+          <div className="flex flex-col w-full h-full md:h-auto md:max-h-[90vh] md:w-full md:max-w-2xl md:rounded-3xl md:shadow-2xl bg-card overflow-hidden animate-fade-in md:animate-zoom-in">
+            {/* Header */}
+            <div className="bg-destructive text-white px-5 py-4 md:py-5 flex items-center justify-between shrink-0">
+              <h2 className="text-lg md:text-xl font-black flex items-center gap-3">
+                <RotateCcw size={24} /> مرتجع شراء
               </h2>
-              <button onClick={() => { setShowPurchaseReturnModal(false); resetPurchaseReturnForm(); }} className="text-white/50 p-1">
-                <X size={22} />
+              <button 
+                onClick={() => { setShowPurchaseReturnModal(false); resetPurchaseReturnForm(); }} 
+                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+              >
+                <X size={24} />
               </button>
             </div>
-            <form onSubmit={handlePurchaseReturnSubmit} className="p-5 space-y-4 text-end">
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">المورد</label>
+            
+            {/* Body */}
+            <form onSubmit={handlePurchaseReturnSubmit} className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-muted-foreground uppercase">المورد (اختياري)</label>
                 <input 
                   type="text" 
                   value={purchaseReturnSupplier} 
                   onChange={(e) => setPurchaseReturnSupplier(e.target.value)} 
-                  placeholder="اسم المورد (اختياري)" 
-                  className="input-field" 
+                  placeholder="اسم المورد" 
+                  className="input-field py-4" 
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">إضافة أصناف للمرتجع</label>
-                <div className="flex gap-2">
-                  <select 
-                    value={selectedReturnProduct} 
-                    onChange={(e) => handleReturnProductChange(e.target.value)} 
-                    className="input-field flex-1"
-                  >
-                    <option value="">اختر المنتج...</option>
-                    {products.filter(p => p.stock > 0).map(p => (
-                      <option key={p.id} value={p.id}>{p.name} (متوفر: {p.stock})</option>
-                    ))}
-                  </select>
+              <div className="space-y-3">
+                <label className="text-xs font-black text-muted-foreground uppercase">إضافة أصناف للمرتجع</label>
+                <select 
+                  value={selectedReturnProduct} 
+                  onChange={(e) => handleReturnProductChange(e.target.value)} 
+                  className="input-field py-4"
+                >
+                  <option value="">اختر المنتج...</option>
+                  {products.filter(p => p.stock > 0).map(p => (
+                    <option key={p.id} value={p.id}>{p.name} (متوفر: {p.stock})</option>
+                  ))}
+                </select>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-muted-foreground">الكمية</label>
+                    <input 
+                      type="number" 
+                      min="1" 
+                      value={returnItemQty} 
+                      onChange={(e) => setReturnItemQty(Number(e.target.value))} 
+                      className="input-field text-center text-lg font-black py-4" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-muted-foreground">سعر الوحدة</label>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      step="0.01"
+                      value={returnItemPrice} 
+                      onChange={(e) => setReturnItemPrice(Number(e.target.value))} 
+                      className="input-field text-center text-lg font-black py-4" 
+                    />
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <input 
-                    type="number" 
-                    min="1" 
-                    value={returnItemQty} 
-                    onChange={(e) => setReturnItemQty(Number(e.target.value))} 
-                    placeholder="الكمية"
-                    className="input-field text-center" 
-                  />
-                  <input 
-                    type="number" 
-                    min="0" 
-                    step="0.01"
-                    value={returnItemPrice} 
-                    onChange={(e) => setReturnItemPrice(Number(e.target.value))} 
-                    placeholder="سعر الوحدة"
-                    className="input-field text-center" 
-                  />
-                </div>
+                
                 <button 
                   type="button" 
                   onClick={addPurchaseReturnItem} 
                   disabled={!selectedReturnProduct || returnItemQty <= 0}
-                  className="w-full py-2 bg-destructive/10 text-destructive rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-4 bg-destructive/10 text-destructive rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-transform"
                 >
-                  <Plus size={16} /> إضافة للمرتجع
+                  <Plus size={20} /> إضافة للمرتجع
                 </button>
               </div>
 
               {purchaseReturnItems.length > 0 && (
-                <div className="space-y-2 bg-muted p-3 rounded-xl">
-                  <p className="text-xs font-bold text-muted-foreground">أصناف المرتجع:</p>
+                <div className="space-y-3 bg-muted p-4 rounded-2xl">
+                  <p className="text-xs font-black text-muted-foreground uppercase">أصناف المرتجع ({purchaseReturnItems.length}):</p>
                   {purchaseReturnItems.map((item) => (
-                    <div key={item.product_id} className="flex justify-between items-center bg-card p-2 rounded-lg">
-                      <span className="font-bold text-xs">{item.product_name}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="bg-destructive/10 text-destructive px-2 py-0.5 rounded font-black text-xs">
-                          {item.quantity} × {item.unit_price}
+                    <div key={item.product_id} className="flex justify-between items-center bg-card p-3 md:p-4 rounded-xl">
+                      <span className="font-bold">{item.product_name}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg font-black text-sm">
+                          {item.quantity} × {item.unit_price.toLocaleString()}
                         </span>
-                        <button type="button" onClick={() => removePurchaseReturnItem(item.product_id)} className="text-destructive p-1">
-                          <Trash2 size={14} />
+                        <button 
+                          type="button" 
+                          onClick={() => removePurchaseReturnItem(item.product_id)} 
+                          className="text-destructive p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </div>
@@ -629,63 +721,152 @@ export const InventoryTab: React.FC = () => {
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-muted-foreground uppercase mr-2">سبب المرتجع</label>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-muted-foreground uppercase">سبب المرتجع (اختياري)</label>
                 <input 
                   type="text" 
                   value={purchaseReturnReason} 
                   onChange={(e) => setPurchaseReturnReason(e.target.value)} 
-                  placeholder="سبب المرتجع (اختياري)" 
-                  className="input-field" 
+                  placeholder="سبب المرتجع" 
+                  className="input-field py-4" 
                 />
               </div>
 
-              <div className="bg-destructive/10 p-3 rounded-xl border border-destructive/20 flex justify-between items-center">
-                <span className="font-bold text-muted-foreground text-sm">إجمالي المرتجع:</span>
-                <span className="text-xl font-black text-destructive">{purchaseReturnTotal.toLocaleString()} {CURRENCY}</span>
+              <div className="bg-destructive/10 p-4 md:p-5 rounded-2xl border border-destructive/20 flex justify-between items-center">
+                <span className="font-bold text-muted-foreground">إجمالي المرتجع:</span>
+                <span className="text-2xl md:text-3xl font-black text-destructive">{purchaseReturnTotal.toLocaleString()} {CURRENCY}</span>
               </div>
-
+            </form>
+            
+            {/* Footer */}
+            <div className="shrink-0 p-5 md:p-6 pt-0 border-t border-border bg-card">
               <button 
-                type="submit" 
-                disabled={purchaseReturnItems.length === 0} 
-                className="w-full bg-destructive text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                type="button"
+                onClick={(e) => {
+                  const form = e.currentTarget.closest('.flex-col')?.querySelector('form');
+                  if (form) form.requestSubmit();
+                }}
+                disabled={purchaseReturnItems.length === 0}
+                className="w-full bg-destructive text-white font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-lg flex items-center justify-center gap-2"
               >
-                <Check size={18} className="inline ml-2" />
+                <Check size={22} />
                 تأكيد المرتجع
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Product Modal */}
+      {/* Product Modal - Full Screen on Mobile */}
       {showProductModal && (
-        <div className="modal-overlay p-4">
-          <div className="bg-card rounded-[2.5rem] w-full max-w-md shadow-2xl animate-zoom-in overflow-hidden max-h-[85vh] overflow-y-auto">
-            <div className="p-5 bg-primary text-primary-foreground flex justify-between items-center sticky top-0 z-10">
-              <h2 className="text-lg font-black flex items-center gap-2">
-                <Package size={20} /> {editingProduct ? 'تعديل صنف' : 'إضافة صنف جديد'}
+        <div className="fixed inset-0 z-50 flex flex-col bg-background md:bg-black/50 md:backdrop-blur-sm md:items-center md:justify-center md:p-6">
+          <div className="flex flex-col w-full h-full md:h-auto md:max-h-[90vh] md:w-full md:max-w-2xl md:rounded-3xl md:shadow-2xl bg-card overflow-hidden animate-fade-in md:animate-zoom-in">
+            {/* Header */}
+            <div className="bg-primary text-primary-foreground px-5 py-4 md:py-5 flex items-center justify-between shrink-0">
+              <h2 className="text-lg md:text-xl font-black flex items-center gap-3">
+                <Package size={24} /> {editingProduct ? 'تعديل صنف' : 'إضافة صنف جديد'}
               </h2>
-              <button onClick={() => { setShowProductModal(false); setEditingProduct(null); }} className="text-primary-foreground/50 p-1">
-                <X size={22} />
+              <button 
+                onClick={() => { setShowProductModal(false); setEditingProduct(null); }} 
+                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+              >
+                <X size={24} />
               </button>
             </div>
-            <form onSubmit={handleProductSubmit} className="p-5 space-y-3 text-end">
-              <input name="name" required defaultValue={editingProduct?.name} placeholder="اسم الصنف" className="input-field" />
-              <input name="category" defaultValue={editingProduct?.category} placeholder="الفئة" className="input-field" />
-              <div className="grid grid-cols-2 gap-3">
-                <input name="costPrice" type="number" step="0.01" defaultValue={editingProduct?.costPrice} placeholder="التكلفة" className="input-field" />
-                <input name="basePrice" type="number" step="0.01" defaultValue={editingProduct?.basePrice} placeholder="سعر المبيع" className="input-field" />
+            
+            {/* Body */}
+            <form onSubmit={handleProductSubmit} className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-muted-foreground uppercase">اسم الصنف</label>
+                <input 
+                  name="name" 
+                  required 
+                  defaultValue={editingProduct?.name} 
+                  placeholder="اسم الصنف" 
+                  className="input-field py-4 text-base" 
+                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <input name="stock" type="number" defaultValue={editingProduct?.stock ?? 0} placeholder="المخزون" className="input-field" />
-                <input name="minStock" type="number" defaultValue={editingProduct?.minStock ?? 5} placeholder="الحد الأدنى" className="input-field" />
+              
+              <div className="space-y-2">
+                <label className="text-xs font-black text-muted-foreground uppercase">الفئة</label>
+                <input 
+                  name="category" 
+                  defaultValue={editingProduct?.category} 
+                  placeholder="الفئة" 
+                  className="input-field py-4" 
+                />
               </div>
-              <input name="unit" defaultValue={editingProduct?.unit ?? 'قطعة'} placeholder="الوحدة" className="input-field" />
-              <button type="submit" className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg">
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-muted-foreground uppercase">سعر التكلفة</label>
+                  <input 
+                    name="costPrice" 
+                    type="number" 
+                    step="0.01" 
+                    defaultValue={editingProduct?.costPrice} 
+                    placeholder="0" 
+                    className="input-field py-4 text-center text-lg font-black" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-muted-foreground uppercase">سعر البيع</label>
+                  <input 
+                    name="basePrice" 
+                    type="number" 
+                    step="0.01" 
+                    defaultValue={editingProduct?.basePrice} 
+                    placeholder="0" 
+                    className="input-field py-4 text-center text-lg font-black" 
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-muted-foreground uppercase">المخزون الحالي</label>
+                  <input 
+                    name="stock" 
+                    type="number" 
+                    defaultValue={editingProduct?.stock ?? 0} 
+                    className="input-field py-4 text-center text-lg font-black" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-muted-foreground uppercase">الحد الأدنى</label>
+                  <input 
+                    name="minStock" 
+                    type="number" 
+                    defaultValue={editingProduct?.minStock ?? 5} 
+                    className="input-field py-4 text-center text-lg font-black" 
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-xs font-black text-muted-foreground uppercase">الوحدة</label>
+                <input 
+                  name="unit" 
+                  defaultValue={editingProduct?.unit ?? 'قطعة'} 
+                  placeholder="قطعة" 
+                  className="input-field py-4" 
+                />
+              </div>
+            </form>
+            
+            {/* Footer */}
+            <div className="shrink-0 p-5 md:p-6 pt-0 border-t border-border bg-card">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  const form = e.currentTarget.closest('.flex-col')?.querySelector('form');
+                  if (form) form.requestSubmit();
+                }}
+                className="w-full bg-primary text-primary-foreground font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all text-lg"
+              >
                 {editingProduct ? 'حفظ التعديلات' : 'حفظ الصنف'}
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}

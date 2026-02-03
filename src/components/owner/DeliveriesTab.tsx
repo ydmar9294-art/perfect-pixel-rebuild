@@ -204,35 +204,40 @@ export const DeliveriesTab: React.FC = () => {
         />
       )}
 
-      {/* Modal تسليم بضاعة */}
+      {/* Modal تسليم بضاعة - Full Screen on Mobile */}
       {showModal && (
-        <div className="modal-overlay p-4">
-          <div className="bg-card rounded-[3rem] w-full max-w-lg shadow-2xl animate-zoom-in overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="p-6 bg-primary text-primary-foreground flex justify-between items-center sticky top-0 z-10">
-              <h2 className="text-xl font-black flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex flex-col bg-background md:bg-black/50 md:backdrop-blur-sm md:items-center md:justify-center md:p-6">
+          <div className="flex flex-col w-full h-full md:h-auto md:max-h-[90vh] md:w-full md:max-w-2xl md:rounded-3xl md:shadow-2xl bg-card overflow-hidden animate-fade-in md:animate-zoom-in">
+            {/* Header */}
+            <div className="bg-primary text-primary-foreground px-5 py-4 md:py-5 flex items-center justify-between shrink-0">
+              <h2 className="text-lg md:text-xl font-black flex items-center gap-3">
                 <Truck size={24} /> تسليم بضاعة للموزع
               </h2>
-              <button onClick={() => { setShowModal(false); resetForm(); }} className="text-primary-foreground/40 p-2 hover:text-primary-foreground">
+              <button 
+                onClick={() => { setShowModal(false); resetForm(); }} 
+                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+              >
                 <X size={24} />
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-5 text-end">
+            {/* Body */}
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
               {/* Error Message */}
               {error && (
-                <div className="bg-destructive/10 text-destructive p-4 rounded-2xl flex items-center gap-2 text-start">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-bold text-sm">{error}</span>
+                <div className="bg-destructive/10 text-destructive p-4 rounded-2xl flex items-center gap-3">
+                  <AlertCircle className="w-6 h-6 flex-shrink-0" />
+                  <span className="font-bold">{error}</span>
                 </div>
               )}
               
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mr-2">الموزع</label>
+                <label className="text-xs font-black text-muted-foreground uppercase">الموزع</label>
                 {distributors.length > 0 ? (
                   <select
                     value={selectedDistributorId}
                     onChange={(e) => handleDistributorChange(e.target.value)}
-                    className="input-field"
+                    className="input-field text-base py-4"
                     disabled={loading}
                   >
                     <option value="">اختر الموزع...</option>
@@ -241,7 +246,7 @@ export const DeliveriesTab: React.FC = () => {
                     ))}
                   </select>
                 ) : (
-                  <div className="bg-muted p-4 rounded-2xl text-sm text-muted-foreground font-bold">
+                  <div className="bg-muted p-5 rounded-2xl text-muted-foreground font-bold text-center">
                     لا يوجد موزعين مُفعّلين حالياً. أضف موزع جديد ثم فعّل حسابه قبل تنفيذ التسليم.
                   </div>
                 )}
@@ -249,12 +254,12 @@ export const DeliveriesTab: React.FC = () => {
 
               {/* إضافة أصناف */}
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mr-2">إضافة أصناف</label>
-                <div className="flex gap-2">
+                <label className="text-xs font-black text-muted-foreground uppercase">إضافة أصناف</label>
+                <div className="flex gap-3">
                   <select 
                     value={selectedProduct} 
                     onChange={(e) => setSelectedProduct(e.target.value)}
-                    className="input-field flex-1"
+                    className="input-field flex-1 py-4"
                     disabled={loading}
                   >
                     <option value="">اختر المادة...</option>
@@ -267,39 +272,39 @@ export const DeliveriesTab: React.FC = () => {
                     min="1"
                     value={itemQuantity}
                     onChange={(e) => setItemQuantity(Number(e.target.value))}
-                    className="input-field w-20 text-center text-foreground"
+                    className="w-20 text-center text-xl font-black bg-card border-2 border-primary/30 rounded-xl text-foreground focus:border-primary focus:outline-none py-4"
                     disabled={loading}
                   />
                   <button 
                     type="button"
                     onClick={addItem}
                     disabled={loading || !selectedProduct}
-                    className="px-4 bg-primary text-primary-foreground rounded-xl disabled:opacity-50"
+                    className="px-5 bg-primary text-primary-foreground rounded-xl disabled:opacity-50 active:scale-95 transition-transform"
                   >
-                    <Plus size={20} />
+                    <Plus size={22} />
                   </button>
                 </div>
               </div>
 
               {/* قائمة الأصناف المضافة */}
               {items.length > 0 && (
-                <div className="space-y-2 bg-muted p-4 rounded-2xl">
-                  <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">الأصناف المختارة:</p>
+                <div className="space-y-3 bg-muted p-4 rounded-2xl">
+                  <p className="text-xs font-black text-muted-foreground uppercase">الأصناف المختارة ({items.length}):</p>
                   {items.map((item) => (
-                    <div key={item.product_id} className="flex justify-between items-center bg-card p-3 rounded-xl">
-                      <div className="flex items-center gap-2">
-                        <Package size={16} className="text-primary" />
-                        <span className="font-bold text-sm">{item.product_name}</span>
+                    <div key={item.product_id} className="flex justify-between items-center bg-card p-4 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <Package size={20} className="text-primary" />
+                        <span className="font-bold">{item.product_name}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="bg-primary/10 text-primary px-2 py-1 rounded font-black text-xs">{item.quantity}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-black">{item.quantity}</span>
                         <button 
                           type="button"
                           onClick={() => removeItem(item.product_id)}
                           disabled={loading}
-                          className="text-destructive p-1 disabled:opacity-50"
+                          className="text-destructive p-2 hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </div>
@@ -308,34 +313,41 @@ export const DeliveriesTab: React.FC = () => {
               )}
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mr-2">ملاحظات (اختياري)</label>
+                <label className="text-xs font-black text-muted-foreground uppercase">ملاحظات (اختياري)</label>
                 <textarea 
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="أي ملاحظات إضافية..."
-                  className="input-field min-h-[80px] resize-none"
+                  className="input-field min-h-[100px] resize-none py-4"
                   disabled={loading}
                 />
               </div>
-
+            </form>
+            
+            {/* Footer */}
+            <div className="shrink-0 p-5 md:p-6 pt-0 border-t border-border bg-card">
               <button 
-                type="submit" 
-                disabled={loading || items.length === 0 || !distributorName.trim()}
-                className="w-full bg-primary text-primary-foreground font-black py-5 rounded-[1.8rem] shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                type="button"
+                onClick={(e) => {
+                  const form = e.currentTarget.closest('.flex-col')?.querySelector('form');
+                  if (form) form.requestSubmit();
+                }}
+                disabled={loading || items.length === 0 || !selectedDistributorId}
+                className="w-full bg-primary text-primary-foreground font-black py-5 rounded-2xl shadow-xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 text-lg"
               >
                 {loading ? (
                   <>
-                    <Loader2 size={20} className="animate-spin" />
+                    <Loader2 size={22} className="animate-spin" />
                     جارٍ التسليم...
                   </>
                 ) : (
                   <>
-                    <Check size={20} />
+                    <Check size={22} />
                     تأكيد التسليم وخصم من المخزون
                   </>
                 )}
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}

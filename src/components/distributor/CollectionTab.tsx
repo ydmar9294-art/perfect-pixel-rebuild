@@ -136,25 +136,25 @@ const CollectionTab: React.FC<CollectionTabProps> = ({ selectedCustomer }) => {
         </div>
       )}
 
-      {/* Amount Input Section */}
-      <div className="bg-gray-50 rounded-3xl p-5">
-        <p className="text-gray-400 text-center text-sm mb-3">إدخال مبلغ التحصيل</p>
+      {/* Amount Input Section - Larger & More Spacious */}
+      <div className="bg-muted rounded-3xl p-5 md:p-6">
+        <p className="text-muted-foreground text-center font-bold mb-4">إدخال مبلغ التحصيل</p>
         <input
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0.00"
-          className="w-full text-center text-3xl font-black text-gray-800 bg-transparent border-none outline-none py-4"
+          className="w-full text-center text-4xl md:text-5xl font-black text-foreground bg-transparent border-none outline-none py-6"
           dir="ltr"
         />
         
-        {/* Quick Amount Buttons */}
-        <div className="grid grid-cols-3 gap-2 mt-4">
+        {/* Quick Amount Buttons - Larger Touch Targets */}
+        <div className="grid grid-cols-3 gap-3 mt-5">
           {quickAmounts.map((value) => (
             <button
               key={value}
               onClick={() => handleQuickAmount(value)}
-              className="py-3 bg-white rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors border border-gray-200"
+              className="py-4 bg-card rounded-xl font-bold text-foreground hover:bg-card/80 transition-colors border border-border active:scale-[0.97] text-base"
             >
               +{value.toLocaleString('ar-SA')}
             </button>
@@ -162,11 +162,11 @@ const CollectionTab: React.FC<CollectionTabProps> = ({ selectedCustomer }) => {
         </div>
       </div>
 
-      {/* Submit Button */}
+      {/* Submit Button - Larger */}
       <button
         onClick={handleCollect}
         disabled={loading || !amount || !selectedSaleId}
-        className="w-full bg-emerald-100 text-emerald-700 font-black py-5 rounded-2xl flex items-center justify-center gap-3 disabled:opacity-50 hover:bg-emerald-200 transition-all"
+        className="w-full bg-emerald-100 text-emerald-700 font-black py-5 md:py-6 rounded-2xl flex items-center justify-center gap-3 disabled:opacity-50 hover:bg-emerald-200 transition-all active:scale-[0.98] text-lg"
       >
         {loading ? (
           <>
@@ -181,46 +181,46 @@ const CollectionTab: React.FC<CollectionTabProps> = ({ selectedCustomer }) => {
         )}
       </button>
 
-      {/* Sale Selection */}
+      {/* Sale Selection - Improved */}
       {!selectedSale && (
-        <div className="space-y-3">
-          <p className="text-gray-400 text-sm">اختر الفاتورة:</p>
+        <div className="space-y-4">
+          <p className="text-muted-foreground font-bold">اختر الفاتورة:</p>
           <div className="relative">
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
               placeholder="بحث بالعميل..."
               value={searchSale}
               onChange={(e) => setSearchSale(e.target.value)}
-              className="w-full bg-gray-50 border-none rounded-2xl px-12 py-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              className="w-full bg-muted border-none rounded-2xl px-12 py-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-base"
             />
           </div>
           
           {unpaidSales.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              <Wallet className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p className="font-bold">لا توجد فواتير مستحقة</p>
+            <div className="text-center py-12 text-muted-foreground">
+              <Wallet className="w-16 h-16 mx-auto mb-3 opacity-30" />
+              <p className="font-bold text-lg">لا توجد فواتير مستحقة</p>
             </div>
           ) : (
-            <div className="max-h-64 overflow-y-auto space-y-2">
+            <div className="max-h-[35vh] overflow-y-auto space-y-2 rounded-2xl">
               {filteredSales.map((sale) => (
                 <button
                   key={sale.id}
                   onClick={() => setSelectedSaleId(sale.id)}
-                  className="w-full text-start p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
+                  className="w-full text-start p-4 md:p-5 bg-muted rounded-2xl hover:bg-muted/80 transition-colors active:scale-[0.98]"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-bold text-gray-800">{sale.customerName}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-bold text-foreground">{sale.customerName}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
                         {new Date(sale.timestamp).toLocaleDateString('ar-SA')}
                       </p>
                     </div>
                     <div className="text-end">
-                      <p className="font-black text-orange-500">
+                      <p className="font-black text-orange-500 text-lg">
                         {Number(sale.remaining).toLocaleString('ar-SA')} ل.س
                       </p>
-                      <p className="text-xs text-gray-500">متبقي</p>
+                      <p className="text-xs text-muted-foreground">متبقي</p>
                     </div>
                   </div>
                 </button>
@@ -230,12 +230,12 @@ const CollectionTab: React.FC<CollectionTabProps> = ({ selectedCustomer }) => {
         </div>
       )}
 
-      {/* Selected Sale Info */}
+      {/* Selected Sale Info - Improved */}
       {selectedSale && (
-        <div className="bg-gray-50 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-600" />
+        <div className="bg-muted rounded-2xl p-4 md:p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <FileText className="w-6 h-6 text-primary" />
               <span className="font-bold text-lg">{selectedSale.customerName}</span>
             </div>
             <button
@@ -243,28 +243,28 @@ const CollectionTab: React.FC<CollectionTabProps> = ({ selectedCustomer }) => {
                 setSelectedSaleId('');
                 setAmount('');
               }}
-              className="p-1 text-gray-400 hover:text-red-500"
+              className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
           
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-white rounded-xl p-3">
-              <p className="text-xs text-gray-400">الإجمالي</p>
-              <p className="font-bold text-gray-800">
+            <div className="bg-card rounded-xl p-4">
+              <p className="text-xs text-muted-foreground mb-1">الإجمالي</p>
+              <p className="font-black text-foreground text-lg">
                 {Number(selectedSale.grandTotal).toLocaleString('ar-SA')}
               </p>
             </div>
-            <div className="bg-emerald-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400">المدفوع</p>
-              <p className="font-bold text-emerald-600">
+            <div className="bg-emerald-50 rounded-xl p-4">
+              <p className="text-xs text-muted-foreground mb-1">المدفوع</p>
+              <p className="font-black text-emerald-600 text-lg">
                 {Number(selectedSale.paidAmount).toLocaleString('ar-SA')}
               </p>
             </div>
-            <div className="bg-orange-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400">المتبقي</p>
-              <p className="font-bold text-orange-500">
+            <div className="bg-orange-50 rounded-xl p-4">
+              <p className="text-xs text-muted-foreground mb-1">المتبقي</p>
+              <p className="font-black text-orange-500 text-lg">
                 {Number(selectedSale.remaining).toLocaleString('ar-SA')}
               </p>
             </div>
