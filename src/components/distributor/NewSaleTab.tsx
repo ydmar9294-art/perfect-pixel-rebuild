@@ -319,56 +319,63 @@ const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
         </div>
       )}
 
-      {/* Product Picker Modal */}
+      {/* Product Picker Modal - Full Screen on Mobile */}
       {showProductPicker && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowProductPicker(false)}>
-          <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="p-5 border-b bg-gray-50">
+        <div className="fixed inset-0 z-50 flex flex-col bg-background md:bg-black/40 md:backdrop-blur-sm md:items-center md:justify-center md:p-6">
+          <div className="flex flex-col w-full h-full md:h-auto md:max-h-[85vh] md:w-full md:max-w-xl md:rounded-3xl md:shadow-2xl bg-card overflow-hidden animate-fade-in md:animate-zoom-in">
+            {/* Header */}
+            <div className="px-5 py-4 md:py-5 border-b bg-muted/50 shrink-0">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-black text-lg">اختر المادة</h3>
-                <button onClick={() => setShowProductPicker(false)} className="p-2 hover:bg-gray-100 rounded-xl">
-                  <X className="w-5 h-5" />
+                <h3 className="font-black text-lg md:text-xl">اختر المادة</h3>
+                <button 
+                  onClick={() => setShowProductPicker(false)} 
+                  className="p-2 hover:bg-muted rounded-xl transition-colors"
+                >
+                  <X className="w-6 h-6" />
                 </button>
               </div>
               <div className="relative">
-                <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="بحث..."
+                  placeholder="بحث عن مادة..."
                   value={searchProduct}
                   onChange={(e) => setSearchProduct(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-12 py-3 font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full bg-background border border-border rounded-xl px-12 py-4 font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-base"
                 />
               </div>
             </div>
             
-            <div className="max-h-[50vh] overflow-y-auto p-4 space-y-2">
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-2">
               {loadingInventory ? (
-                <div className="text-center py-12">
-                  <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin text-blue-600" />
-                  <p className="text-gray-400 font-bold">جارٍ التحميل...</p>
+                <div className="text-center py-16">
+                  <Loader2 className="w-10 h-10 mx-auto mb-4 animate-spin text-primary" />
+                  <p className="text-muted-foreground font-bold">جارٍ التحميل...</p>
                 </div>
               ) : filteredProducts.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <Package className="w-16 h-16 mx-auto mb-3 opacity-50" />
-                  <p className="font-bold">لا توجد مواد متاحة</p>
-                  <p className="text-sm mt-1">تواصل مع صاحب المنشأة لاستلام بضاعة</p>
+                <div className="text-center py-16 text-muted-foreground">
+                  <Package className="w-20 h-20 mx-auto mb-4 opacity-30" />
+                  <p className="font-bold text-lg mb-2">لا توجد مواد متاحة</p>
+                  <p className="text-sm">تواصل مع صاحب المنشأة لاستلام بضاعة</p>
                 </div>
               ) : (
                 filteredProducts.map((product) => (
                   <button
                     key={product.id}
                     onClick={() => addToCart(product)}
-                    className="w-full text-start p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
+                    className="w-full text-start p-4 md:p-5 bg-muted rounded-2xl hover:bg-muted/80 transition-colors active:scale-[0.98]"
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-gray-800">{product.product_name}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="font-bold text-foreground text-base md:text-lg">{product.product_name}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
                           المتوفر: {product.quantity} | السعر: {product.base_price.toLocaleString('ar-SA')} ل.س
                         </p>
                       </div>
-                      <Plus className="w-5 h-5 text-blue-600" />
+                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <Plus className="w-5 h-5 text-primary" />
+                      </div>
                     </div>
                   </button>
                 ))

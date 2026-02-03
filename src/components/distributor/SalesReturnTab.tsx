@@ -283,30 +283,37 @@ const SalesReturnTab: React.FC<SalesReturnTabProps> = ({ selectedCustomer }) => 
         )}
       </button>
 
-      {/* Sale Selection if not selected */}
+      {/* Sale Selection if not selected - Improved */}
       {!selectedSaleId && (
-        <div className="space-y-3">
-          <p className="text-gray-400 text-sm">اختر فاتورة للإرجاع:</p>
-          <div className="max-h-48 overflow-y-auto space-y-2">
-            {activeSales.slice(0, 10).map((sale) => (
-              <button
-                key={sale.id}
-                onClick={() => handleSelectSale(sale.id)}
-                className="w-full text-start p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-gray-800">{sale.customerName}</p>
-                    <p className="text-sm text-gray-500">
-                      {new Date(sale.timestamp).toLocaleDateString('ar-SA')}
-                    </p>
+        <div className="space-y-4">
+          <p className="text-muted-foreground font-bold">اختر فاتورة للإرجاع:</p>
+          <div className="max-h-[40vh] overflow-y-auto space-y-2 rounded-2xl">
+            {activeSales.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="w-16 h-16 mx-auto mb-3 opacity-30" />
+                <p className="font-bold">لا توجد فواتير</p>
+              </div>
+            ) : (
+              activeSales.slice(0, 15).map((sale) => (
+                <button
+                  key={sale.id}
+                  onClick={() => handleSelectSale(sale.id)}
+                  className="w-full text-start p-4 md:p-5 bg-muted rounded-2xl hover:bg-muted/80 transition-colors active:scale-[0.98]"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-foreground">{sale.customerName}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {new Date(sale.timestamp).toLocaleDateString('ar-SA')}
+                      </p>
+                    </div>
+                    <span className="font-black text-primary text-lg">
+                      {Number(sale.grandTotal).toLocaleString('ar-SA')} ل.س
+                    </span>
                   </div>
-                  <span className="font-bold text-blue-600">
-                    {Number(sale.grandTotal).toLocaleString('ar-SA')} ل.س
-                  </span>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))
+            )}
           </div>
         </div>
       )}
