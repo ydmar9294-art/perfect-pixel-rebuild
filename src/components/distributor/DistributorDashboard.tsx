@@ -14,7 +14,8 @@ import {
   Loader2,
   ChevronDown,
   Search,
-  MessageCircle
+  MessageCircle,
+  Warehouse
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,13 +25,14 @@ import NewSaleTab from './NewSaleTab';
 import SalesReturnTab from './SalesReturnTab';
 import CollectionTab from './CollectionTab';
 import CustomerDebtsTab from './CustomerDebtsTab';
+import DistributorInventoryTab from './DistributorInventoryTab';
 import { Customer } from '@/types';
 
-type DistributorTabType = 'new-sale' | 'returns' | 'collections' | 'debts';
+type DistributorTabType = 'inventory' | 'new-sale' | 'returns' | 'collections' | 'debts';
 
 const DistributorDashboard: React.FC = () => {
   const { customers, logout, addCustomer, addNotification, refreshAllData } = useApp();
-  const [activeTab, setActiveTab] = useState<DistributorTabType>('new-sale');
+  const [activeTab, setActiveTab] = useState<DistributorTabType>('inventory');
   const [loggingOut, setLoggingOut] = useState(false);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [showCustomerPicker, setShowCustomerPicker] = useState(false);
@@ -98,6 +100,13 @@ const DistributorDashboard: React.FC = () => {
 
   const tabs: { id: DistributorTabType; label: string; icon: React.ReactNode; color: string; bgColor: string }[] = [
     { 
+      id: 'inventory', 
+      label: 'مخزني', 
+      icon: <Warehouse className="w-5 h-5" />,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-600'
+    },
+    { 
       id: 'new-sale', 
       label: 'فاتورة', 
       icon: <FileText className="w-5 h-5" />,
@@ -129,6 +138,8 @@ const DistributorDashboard: React.FC = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'inventory':
+        return <DistributorInventoryTab />;
       case 'new-sale':
         return <NewSaleTab selectedCustomer={selectedCustomer} />;
       case 'returns':

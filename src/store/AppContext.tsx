@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserRole, User, Product, License, LicenseStatus, EmployeeType, Organization, Customer, Sale, Payment, Notification } from '@/types';
 import { resolveUserProfile } from '@/hooks/useAuthOperations';
 import { 
-  Purchase, Delivery, PendingEmployee, 
+  Purchase, Delivery, PendingEmployee, DistributorInventoryItem,
   fetchOrganizationData, fetchDeveloperData,
   transformUser, transformPendingEmployee
 } from '@/hooks/useDataOperations';
@@ -39,6 +39,7 @@ interface AppContextType {
   purchases: Purchase[];
   deliveries: Delivery[];
   pendingEmployees: PendingEmployee[];
+  distributorInventory: DistributorInventoryItem[];
 
   logout: () => Promise<void>;
   refreshAuth: () => Promise<void>;
@@ -116,6 +117,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [pendingEmployees, setPendingEmployees] = useState<PendingEmployee[]>([]);
+  const [distributorInventory, setDistributorInventory] = useState<DistributorInventoryItem[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Refs for auth management
@@ -156,6 +158,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setPurchases(data.purchases || []);
           setDeliveries(data.deliveries || []);
           setPendingEmployees(data.pendingEmployees || []);
+          setDistributorInventory(data.distributorInventory || []);
           if (data.users) setUsers(data.users);
         }
 
@@ -387,6 +390,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         purchases,
         deliveries,
         pendingEmployees,
+        distributorInventory,
 
         logout,
         refreshAuth,
