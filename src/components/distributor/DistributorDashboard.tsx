@@ -15,7 +15,8 @@ import {
   ChevronDown,
   Search,
   MessageCircle,
-  Warehouse
+  Warehouse,
+  History
 } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,9 +27,10 @@ import SalesReturnTab from './SalesReturnTab';
 import CollectionTab from './CollectionTab';
 import CustomerDebtsTab from './CustomerDebtsTab';
 import DistributorInventoryTab from './DistributorInventoryTab';
+import InvoiceHistoryTab from './InvoiceHistoryTab';
 import { Customer } from '@/types';
 
-type DistributorTabType = 'inventory' | 'new-sale' | 'returns' | 'collections' | 'debts';
+type DistributorTabType = 'inventory' | 'new-sale' | 'returns' | 'collections' | 'debts' | 'history';
 
 const DistributorDashboard: React.FC = () => {
   const { customers, logout, addCustomer, addNotification, refreshAllData } = useApp();
@@ -128,6 +130,13 @@ const DistributorDashboard: React.FC = () => {
       bgColor: 'bg-orange-500'
     },
     { 
+      id: 'history', 
+      label: 'السجل', 
+      icon: <History className="w-5 h-5" />,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-600'
+    },
+    { 
       id: 'debts', 
       label: 'الزبائن', 
       icon: <Users className="w-5 h-5" />,
@@ -148,6 +157,8 @@ const DistributorDashboard: React.FC = () => {
         return <CollectionTab selectedCustomer={selectedCustomer} />;
       case 'debts':
         return <CustomerDebtsTab selectedCustomer={selectedCustomer} myCustomers={myCustomers} />;
+      case 'history':
+        return <InvoiceHistoryTab />;
       default:
         return null;
     }
