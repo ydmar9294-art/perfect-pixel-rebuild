@@ -841,6 +841,69 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          destination_id: string | null
+          destination_type: string
+          id: string
+          movement_type: string
+          notes: string | null
+          organization_id: string
+          product_id: string
+          quantity: number
+          reference_id: string | null
+          source_id: string | null
+          source_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          destination_id?: string | null
+          destination_type: string
+          id?: string
+          movement_type: string
+          notes?: string | null
+          organization_id: string
+          product_id: string
+          quantity: number
+          reference_id?: string | null
+          source_id?: string | null
+          source_type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          destination_id?: string | null
+          destination_type?: string
+          id?: string
+          movement_type?: string
+          notes?: string | null
+          organization_id?: string
+          product_id?: string
+          quantity?: number
+          reference_id?: string | null
+          source_id?: string | null
+          source_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
