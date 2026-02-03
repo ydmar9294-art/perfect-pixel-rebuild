@@ -73,7 +73,7 @@ const AppContext = createContext<AppContextType | null>(null);
 // Constants - OPTIMIZED for instant loading
 // ============================================
 
-const AUTH_TIMEOUT_MS = 2000; // Fast timeout for non-cached scenarios
+const AUTH_TIMEOUT_MS = 8000; // Timeout for auth operations (increased for slow networks)
 const DATA_REFRESH_DEBOUNCE_MS = 300;
 
 // Helper to build user from cache
@@ -184,27 +184,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // ============================================
 
   const resolveProfile = async (uid: string) => {
-    const result = await resolveUserProfile(uid);
-    
-    if (!result.success) {
-      console.warn('[Auth] Profile resolution failed - needs activation');
-      setNeedsActivation(true);
+    try {
+      const result = await resolveUserProfile(uid);
+      
+      if (!result.success) {
+        console.warn('[Auth] Profile resolution failed - needs activation');
+        setNeedsActivation(true);
+        setIsAuthenticated(true);
+        setIsLoading(false); // CRITICAL: Stop loading to show activation screen
+        return false;
+      }
+
+      setUser(result.user);
+      setRole(result.role);
+      setOrganization(result.organization);
+      setNeedsActivation(false);
       setIsAuthenticated(true);
+      setIsLoading(false); // Stop loading on success
+      
+      // Log cache hit for debugging
+      if (result.fromCache) {
+        console.log('[Auth] Loaded from cache - fast path');
+      }
+      
+      return true;
+    } catch (err) {
+      console.error('[Auth] resolveProfile error:', err);
+      setIsLoading(false); // Stop loading on error
       return false;
     }
-
-    setUser(result.user);
-    setRole(result.role);
-    setOrganization(result.organization);
-    setNeedsActivation(false);
-    setIsAuthenticated(true);
-    
-    // Log cache hit for debugging
-    if (result.fromCache) {
-      console.log('[Auth] Loaded from cache - fast path');
-    }
-    
-    return true;
   };
 
   // ============================================
