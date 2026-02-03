@@ -30,6 +30,16 @@ export interface Delivery {
   created_at: number;
 }
 
+export interface DistributorInventoryItem {
+  id: string;
+  distributor_id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  organization_id: string;
+  updated_at: number;
+}
+
 export interface PendingEmployee {
   id: string;
   name: string;
@@ -51,6 +61,7 @@ export interface FetchedData {
   pendingEmployees: PendingEmployee[];
   users: any[];
   licenses: License[];
+  distributorInventory: DistributorInventoryItem[];
 }
 
 // ============================================
@@ -126,6 +137,16 @@ export const transformDelivery = (d: any): Delivery => ({
   created_at: new Date(d.created_at).getTime()
 });
 
+export const transformDistributorInventory = (d: any): DistributorInventoryItem => ({
+  id: d.id,
+  distributor_id: d.distributor_id,
+  product_id: d.product_id,
+  product_name: d.product_name,
+  quantity: d.quantity,
+  organization_id: d.organization_id,
+  updated_at: new Date(d.updated_at).getTime()
+});
+
 export const transformPendingEmployee = (e: any): PendingEmployee => ({
   id: e.id,
   name: e.name,
@@ -171,7 +192,7 @@ export const fetchOrganizationData = async (
   organizationId: string,
   role: UserRole
 ): Promise<Partial<FetchedData>> => {
-  const [productsRes, customersRes, salesRes, paymentsRes, purchasesRes, deliveriesRes, pendingRes] = await Promise.all([
+  const [productsRes, customersRes, salesRes, paymentsRes, purchasesRes, deliveriesRes, pendingRes, distributorInvRes] = await Promise.all([
     supabase.from('products').select('*').eq('is_deleted', false),
     supabase.from('customers').select('*'),
     supabase.from('sales').select('*').order('created_at', { ascending: false }),
@@ -180,7 +201,9 @@ export const fetchOrganizationData = async (
     supabase.from('deliveries').select('*').order('created_at', { ascending: false }),
     role === UserRole.OWNER 
       ? supabase.from('pending_employees').select('*').eq('is_used', false).order('created_at', { ascending: false }) 
-      : Promise.resolve({ data: [] })
+      : Promise.resolve({ data: [] }),
+    // Fetch distributor inventory - RLS will filter to current user's inventory
+    supabase.from('distributor_inventory').select('*').order('updated_at', { ascending: false })
   ]);
 
   let usersRes: any = null;
@@ -196,7 +219,8 @@ export const fetchOrganizationData = async (
     purchases: (purchasesRes?.data || []).map(transformPurchase),
     deliveries: (deliveriesRes?.data || []).map(transformDelivery),
     pendingEmployees: role === UserRole.OWNER ? (pendingRes?.data || []).map(transformPendingEmployee) : [],
-    users: role === UserRole.OWNER && usersRes?.data ? usersRes.data.map(transformUser) : []
+    users: role === UserRole.OWNER && usersRes?.data ? usersRes.data.map(transformUser) : [],
+    distributorInventory: (distributorInvRes?.data || []).map(transformDistributorInventory)
   };
 };
 
