@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { X } from 'lucide-react';
 
 interface FullScreenModalProps {
@@ -29,8 +30,8 @@ const FullScreenModal: React.FC<FullScreenModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex flex-col bg-background" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
       {/* Full Screen Modal */}
       <div className="flex flex-col w-full h-full bg-card overflow-hidden animate-fade-in">
         {/* Header */}
@@ -62,6 +63,9 @@ const FullScreenModal: React.FC<FullScreenModalProps> = ({
       </div>
     </div>
   );
+
+  // Use portal to render modal at document.body level
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default FullScreenModal;
