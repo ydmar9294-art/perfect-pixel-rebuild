@@ -36,6 +36,7 @@ interface InvoicePrintProps {
   paidAmount?: number;
   remaining?: number;
   notes?: string;
+  paymentType?: 'CASH' | 'CREDIT';
   onClose: () => void;
 }
 
@@ -49,6 +50,7 @@ const InvoicePrint: React.FC<InvoicePrintProps> = ({
   paidAmount,
   remaining,
   notes,
+  paymentType,
   onClose
 }) => {
   const [legalInfo, setLegalInfo] = useState<LegalInfo | null>(null);
@@ -269,6 +271,15 @@ const InvoicePrint: React.FC<InvoicePrintProps> = ({
                 <span>العميل:</span>
                 <span>{customerName}</span>
               </div>
+              {/* Payment Type Status */}
+              {paymentType && invoiceType === 'sale' && (
+                <div className="info-row flex justify-between font-bold">
+                  <span>حالة الدفع:</span>
+                  <span className={paymentType === 'CASH' ? 'text-green-600' : 'text-orange-600'}>
+                    {paymentType === 'CASH' ? '✓ نقداً (مدفوعة)' : '⏳ آجل'}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Items */}

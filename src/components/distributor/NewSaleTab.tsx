@@ -36,6 +36,8 @@ interface NewSaleTabProps {
   selectedCustomer: Customer | null;
 }
 
+type PaymentType = 'CASH' | 'CREDIT';
+
 const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
   const { createSale, refreshAllData, addNotification } = useApp();
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -45,6 +47,7 @@ const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
   const [success, setSuccess] = useState(false);
   const [distributorInventory, setDistributorInventory] = useState<DistributorProduct[]>([]);
   const [loadingInventory, setLoadingInventory] = useState(true);
+  const [paymentType, setPaymentType] = useState<PaymentType>('CREDIT');
   
   // Print state
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -53,6 +56,7 @@ const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
     customerName: string;
     items: CartItem[];
     grandTotal: number;
+    paymentType: PaymentType;
   } | null>(null);
 
   // جلب مخزون الموزع الخاص به فقط
@@ -157,10 +161,12 @@ const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
         id: crypto.randomUUID(),
         customerName: selectedCustomer.name,
         items: [...cart],
-        grandTotal
+        grandTotal,
+        paymentType
       });
       
       setCart([]);
+      setPaymentType('CREDIT'); // Reset to default
       setSuccess(true);
       setShowPrintModal(true); // Show print modal after success
       await refreshAllData();
@@ -194,8 +200,9 @@ const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
             total_price: item.quantity * item.unit_price
           }))}
           grandTotal={lastSaleData.grandTotal}
-          paidAmount={0}
-          remaining={lastSaleData.grandTotal}
+          paidAmount={lastSaleData.paymentType === 'CASH' ? lastSaleData.grandTotal : 0}
+          remaining={lastSaleData.paymentType === 'CASH' ? 0 : lastSaleData.grandTotal}
+          paymentType={lastSaleData.paymentType}
           onClose={closePrintModal}
         />
       )}
@@ -293,6 +300,35 @@ const NewSaleTab: React.FC<NewSaleTabProps> = ({ selectedCustomer }) => {
       {/* Total & Submit */}
       {cart.length > 0 && (
         <div className="space-y-4 pt-4 border-t border-gray-100">
+          {/* Payment Type Selection */}
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-500 uppercase">نوع الدفع</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentType('CASH')}
+                className={`py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all border-2 ${
+                  paymentType === 'CASH'
+                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/30'
+                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-emerald-300'
+                }`}
+              >
+                💵 نقداً
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentType('CREDIT')}
+                className={`py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all border-2 ${
+                  paymentType === 'CREDIT'
+                    ? 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/30'
+                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-orange-300'
+                }`}
+              >
+                📝 آجل
+              </button>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between">
             <span className="font-bold text-gray-500">الإجمالي</span>
             <span className="font-black text-blue-600 text-2xl">
