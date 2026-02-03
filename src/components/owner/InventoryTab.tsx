@@ -6,6 +6,7 @@ import {
   Check, Trash2, Search, Settings2, AlertTriangle, RotateCcw
 } from 'lucide-react';
 import { EmployeeType, Product } from '@/types';
+import FullScreenModal from '@/components/ui/FullScreenModal';
 
 interface DeliveryItem {
   product_id: string;
@@ -411,465 +412,409 @@ export const InventoryTab: React.FC = () => {
         </div>
       )}
 
-      {/* Purchase Modal - Full Screen on Mobile */}
-      {showPurchaseModal && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background md:bg-black/50 md:backdrop-blur-sm md:items-center md:justify-center md:p-6">
-          <div className="flex flex-col w-full h-full md:h-auto md:max-h-[90vh] md:w-full md:max-w-2xl md:rounded-3xl md:shadow-2xl bg-card overflow-hidden animate-fade-in md:animate-zoom-in">
-            {/* Header */}
-            <div className="bg-success text-white px-5 py-4 md:py-5 flex items-center justify-between shrink-0">
-              <h2 className="text-lg md:text-xl font-black flex items-center gap-3">
-                <ShoppingCart size={24} /> شراء مواد
-              </h2>
-              <button 
-                onClick={() => { setShowPurchaseModal(false); resetPurchaseForm(); }} 
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
-              >
-                <X size={24} />
-              </button>
+      {/* Purchase Modal - Full Screen */}
+      <FullScreenModal
+        isOpen={showPurchaseModal}
+        onClose={() => { setShowPurchaseModal(false); resetPurchaseForm(); }}
+        title="شراء مواد"
+        icon={<ShoppingCart size={24} />}
+        headerColor="success"
+        footer={
+          <button 
+            type="button"
+            onClick={() => {
+              const form = document.getElementById('purchase-form') as HTMLFormElement;
+              if (form) form.requestSubmit();
+            }}
+            className="w-full bg-success text-white font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all text-lg"
+          >
+            تأكيد الشراء
+          </button>
+        }
+      >
+        <form id="purchase-form" onSubmit={handlePurchaseSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-muted-foreground uppercase">المادة</label>
+            <select 
+              value={purchaseProduct} 
+              onChange={(e) => handlePurchaseProductChange(e.target.value)} 
+              required 
+              className="input-field text-base py-4"
+            >
+              <option value="">اختر المادة...</option>
+              {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-black text-muted-foreground uppercase">الكمية</label>
+              <input 
+                type="number" 
+                min="1" 
+                value={purchaseQty} 
+                onChange={(e) => setPurchaseQty(Number(e.target.value))} 
+                required 
+                className="input-field text-center text-xl font-black py-4" 
+              />
             </div>
-            
-            {/* Body */}
-            <form onSubmit={handlePurchaseSubmit} className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase">المادة</label>
-                <select 
-                  value={purchaseProduct} 
-                  onChange={(e) => handlePurchaseProductChange(e.target.value)} 
-                  required 
-                  className="input-field text-base py-4"
-                >
-                  <option value="">اختر المادة...</option>
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-muted-foreground uppercase">الكمية</label>
-                  <input 
-                    type="number" 
-                    min="1" 
-                    value={purchaseQty} 
-                    onChange={(e) => setPurchaseQty(Number(e.target.value))} 
-                    required 
-                    className="input-field text-center text-lg font-black py-4" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-muted-foreground uppercase">سعر الوحدة</label>
-                  <input 
-                    type="number" 
-                    min="0" 
-                    step="0.01" 
-                    value={purchasePrice} 
-                    onChange={(e) => setPurchasePrice(Number(e.target.value))} 
-                    required 
-                    className="input-field text-center text-lg font-black py-4" 
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase">المورد (اختياري)</label>
-                <input 
-                  type="text" 
-                  value={purchaseSupplier} 
-                  onChange={(e) => setPurchaseSupplier(e.target.value)} 
-                  placeholder="اسم المورد" 
-                  className="input-field py-4" 
-                />
-              </div>
-              
-              <div className="bg-success/10 p-4 md:p-5 rounded-2xl border border-success/20 flex justify-between items-center">
-                <span className="font-bold text-muted-foreground">الإجمالي:</span>
-                <span className="text-2xl md:text-3xl font-black text-success">{(purchaseQty * purchasePrice).toLocaleString()} {CURRENCY}</span>
-              </div>
-            </form>
-            
-            {/* Footer */}
-            <div className="shrink-0 p-5 md:p-6 pt-0 border-t border-border bg-card">
-              <button 
-                type="button"
-                onClick={(e) => {
-                  const form = e.currentTarget.closest('.flex-col')?.querySelector('form');
-                  if (form) form.requestSubmit();
+            <div className="space-y-2">
+              <label className="text-xs font-black text-muted-foreground uppercase">سعر الوحدة</label>
+              <input 
+                type="number" 
+                min="0" 
+                step="0.01" 
+                value={purchasePrice} 
+                onChange={(e) => setPurchasePrice(Number(e.target.value))} 
+                required 
+                className="input-field text-center text-xl font-black py-4" 
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-xs font-black text-muted-foreground uppercase">المورد (اختياري)</label>
+            <input 
+              type="text" 
+              value={purchaseSupplier} 
+              onChange={(e) => setPurchaseSupplier(e.target.value)} 
+              placeholder="اسم المورد" 
+              className="input-field py-4" 
+            />
+          </div>
+          
+          <div className="bg-success/10 p-5 rounded-2xl border border-success/20 flex justify-between items-center">
+            <span className="font-bold text-muted-foreground">الإجمالي:</span>
+            <span className="text-3xl font-black text-success">{(purchaseQty * purchasePrice).toLocaleString()} {CURRENCY}</span>
+          </div>
+        </form>
+      </FullScreenModal>
+
+      {/* Delivery Modal - Full Screen */}
+      <FullScreenModal
+        isOpen={showDeliveryModal}
+        onClose={() => { setShowDeliveryModal(false); resetDeliveryForm(); }}
+        title="تسليم للموزع"
+        icon={<Truck size={24} />}
+        headerColor="primary"
+        footer={
+          <button 
+            type="button"
+            onClick={() => {
+              const form = document.getElementById('delivery-form') as HTMLFormElement;
+              if (form) form.requestSubmit();
+            }}
+            disabled={deliveryItems.length === 0 || !selectedDistributorId}
+            className="w-full bg-primary text-primary-foreground font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-lg flex items-center justify-center gap-2"
+          >
+            <Check size={22} />
+            تأكيد التسليم
+          </button>
+        }
+      >
+        <form id="delivery-form" onSubmit={handleDeliverySubmit} className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-muted-foreground uppercase">الموزع</label>
+            {distributors.length > 0 ? (
+              <select
+                value={selectedDistributorId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setSelectedDistributorId(id);
+                  const d = distributors.find(x => x.id === id);
+                  setDistributorName(d?.name || '');
                 }}
-                className="w-full bg-success text-white font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all text-lg"
+                required
+                className="input-field text-base py-4"
               >
-                تأكيد الشراء
+                <option value="">اختر الموزع...</option>
+                {distributors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            ) : (
+              <div className="bg-muted p-4 rounded-2xl text-sm text-muted-foreground font-bold text-center">
+                لا يوجد موزعين مُفعّلين حالياً. أضف موزع جديد ثم فعّل حسابه قبل تنفيذ التسليم.
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-xs font-black text-muted-foreground uppercase">إضافة أصناف</label>
+            <div className="flex gap-3">
+              <select 
+                value={selectedDeliveryProduct} 
+                onChange={(e) => setSelectedDeliveryProduct(e.target.value)} 
+                className="input-field flex-1 py-4"
+              >
+                <option value="">اختر المادة...</option>
+                {products.filter(p => p.stock > 0).map(p => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.stock})</option>
+                ))}
+              </select>
+              <input 
+                type="text" 
+                inputMode="numeric" 
+                pattern="[0-9]*"
+                value={deliveryItemQty} 
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setDeliveryItemQty(val ? Number(val) : 1);
+                }} 
+                className="w-20 text-center text-xl font-black bg-card border-2 border-primary/30 rounded-xl text-foreground focus:border-primary focus:outline-none py-4" 
+              />
+              <button 
+                type="button" 
+                onClick={addDeliveryItem} 
+                className="px-5 bg-primary text-primary-foreground rounded-xl active:scale-95 transition-transform"
+              >
+                <Plus size={22} />
               </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Delivery Modal - Full Screen on Mobile */}
-      {showDeliveryModal && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background md:bg-black/50 md:backdrop-blur-sm md:items-center md:justify-center md:p-6">
-          <div className="flex flex-col w-full h-full md:h-auto md:max-h-[90vh] md:w-full md:max-w-2xl md:rounded-3xl md:shadow-2xl bg-card overflow-hidden animate-fade-in md:animate-zoom-in">
-            {/* Header */}
-            <div className="bg-primary text-primary-foreground px-5 py-4 md:py-5 flex items-center justify-between shrink-0">
-              <h2 className="text-lg md:text-xl font-black flex items-center gap-3">
-                <Truck size={24} /> تسليم للموزع
-              </h2>
-              <button 
-                onClick={() => { setShowDeliveryModal(false); resetDeliveryForm(); }} 
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            
-            {/* Body */}
-            <form onSubmit={handleDeliverySubmit} className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase">الموزع</label>
-                {distributors.length > 0 ? (
-                  <select
-                    value={selectedDistributorId}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      setSelectedDistributorId(id);
-                      const d = distributors.find(x => x.id === id);
-                      setDistributorName(d?.name || '');
-                    }}
-                    required
-                    className="input-field text-base py-4"
-                  >
-                    <option value="">اختر الموزع...</option>
-                    {distributors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
-                ) : (
-                  <div className="bg-muted p-4 rounded-2xl text-sm text-muted-foreground font-bold text-center">
-                    لا يوجد موزعين مُفعّلين حالياً. أضف موزع جديد ثم فعّل حسابه قبل تنفيذ التسليم.
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-xs font-black text-muted-foreground uppercase">إضافة أصناف</label>
-                <div className="flex gap-3">
-                  <select 
-                    value={selectedDeliveryProduct} 
-                    onChange={(e) => setSelectedDeliveryProduct(e.target.value)} 
-                    className="input-field flex-1 py-4"
-                  >
-                    <option value="">اختر المادة...</option>
-                    {products.filter(p => p.stock > 0).map(p => (
-                      <option key={p.id} value={p.id}>{p.name} ({p.stock})</option>
-                    ))}
-                  </select>
-                  <input 
-                    type="text" 
-                    inputMode="numeric" 
-                    pattern="[0-9]*"
-                    value={deliveryItemQty} 
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      setDeliveryItemQty(val ? Number(val) : 1);
-                    }} 
-                    className="w-20 text-center text-xl font-black bg-card border-2 border-primary/30 rounded-xl text-foreground focus:border-primary focus:outline-none py-4" 
-                  />
-                  <button 
-                    type="button" 
-                    onClick={addDeliveryItem} 
-                    className="px-5 bg-primary text-primary-foreground rounded-xl active:scale-95 transition-transform"
-                  >
-                    <Plus size={22} />
-                  </button>
-                </div>
-              </div>
-
-              {deliveryItems.length > 0 && (
-                <div className="space-y-3 bg-muted p-4 rounded-2xl">
-                  <p className="text-xs font-black text-muted-foreground uppercase">الأصناف المختارة ({deliveryItems.length}):</p>
-                  {deliveryItems.map((item) => (
-                    <div key={item.product_id} className="flex justify-between items-center bg-card p-3 md:p-4 rounded-xl">
-                      <span className="font-bold">{item.product_name}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-black">{item.quantity}</span>
-                        <button 
-                          type="button" 
-                          onClick={() => removeDeliveryItem(item.product_id)} 
-                          className="text-destructive p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </form>
-            
-            {/* Footer */}
-            <div className="shrink-0 p-5 md:p-6 pt-0 border-t border-border bg-card">
-              <button 
-                type="button"
-                onClick={(e) => {
-                  const form = e.currentTarget.closest('.flex-col')?.querySelector('form');
-                  if (form) form.requestSubmit();
-                }}
-                disabled={deliveryItems.length === 0 || !selectedDistributorId}
-                className="w-full bg-primary text-primary-foreground font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-lg flex items-center justify-center gap-2"
-              >
-                <Check size={22} />
-                تأكيد التسليم
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Purchase Return Modal - Full Screen on Mobile */}
-      {showPurchaseReturnModal && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background md:bg-black/50 md:backdrop-blur-sm md:items-center md:justify-center md:p-6">
-          <div className="flex flex-col w-full h-full md:h-auto md:max-h-[90vh] md:w-full md:max-w-2xl md:rounded-3xl md:shadow-2xl bg-card overflow-hidden animate-fade-in md:animate-zoom-in">
-            {/* Header */}
-            <div className="bg-destructive text-white px-5 py-4 md:py-5 flex items-center justify-between shrink-0">
-              <h2 className="text-lg md:text-xl font-black flex items-center gap-3">
-                <RotateCcw size={24} /> مرتجع شراء
-              </h2>
-              <button 
-                onClick={() => { setShowPurchaseReturnModal(false); resetPurchaseReturnForm(); }} 
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            
-            {/* Body */}
-            <form onSubmit={handlePurchaseReturnSubmit} className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase">المورد (اختياري)</label>
-                <input 
-                  type="text" 
-                  value={purchaseReturnSupplier} 
-                  onChange={(e) => setPurchaseReturnSupplier(e.target.value)} 
-                  placeholder="اسم المورد" 
-                  className="input-field py-4" 
-                />
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-xs font-black text-muted-foreground uppercase">إضافة أصناف للمرتجع</label>
-                <select 
-                  value={selectedReturnProduct} 
-                  onChange={(e) => handleReturnProductChange(e.target.value)} 
-                  className="input-field py-4"
-                >
-                  <option value="">اختر المنتج...</option>
-                  {products.filter(p => p.stock > 0).map(p => (
-                    <option key={p.id} value={p.id}>{p.name} (متوفر: {p.stock})</option>
-                  ))}
-                </select>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-muted-foreground">الكمية</label>
-                    <input 
-                      type="number" 
-                      min="1" 
-                      value={returnItemQty} 
-                      onChange={(e) => setReturnItemQty(Number(e.target.value))} 
-                      className="input-field text-center text-lg font-black py-4" 
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-muted-foreground">سعر الوحدة</label>
-                    <input 
-                      type="number" 
-                      min="0" 
-                      step="0.01"
-                      value={returnItemPrice} 
-                      onChange={(e) => setReturnItemPrice(Number(e.target.value))} 
-                      className="input-field text-center text-lg font-black py-4" 
-                    />
+          {deliveryItems.length > 0 && (
+            <div className="space-y-3 bg-muted p-4 rounded-2xl">
+              <p className="text-xs font-black text-muted-foreground uppercase">الأصناف المختارة ({deliveryItems.length}):</p>
+              {deliveryItems.map((item) => (
+                <div key={item.product_id} className="flex justify-between items-center bg-card p-4 rounded-xl">
+                  <span className="font-bold">{item.product_name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-black">{item.quantity}</span>
+                    <button 
+                      type="button" 
+                      onClick={() => removeDeliveryItem(item.product_id)} 
+                      className="text-destructive p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </div>
-                
-                <button 
-                  type="button" 
-                  onClick={addPurchaseReturnItem} 
-                  disabled={!selectedReturnProduct || returnItemQty <= 0}
-                  className="w-full py-4 bg-destructive/10 text-destructive rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-transform"
-                >
-                  <Plus size={20} /> إضافة للمرتجع
-                </button>
-              </div>
+              ))}
+            </div>
+          )}
+        </form>
+      </FullScreenModal>
 
-              {purchaseReturnItems.length > 0 && (
-                <div className="space-y-3 bg-muted p-4 rounded-2xl">
-                  <p className="text-xs font-black text-muted-foreground uppercase">أصناف المرتجع ({purchaseReturnItems.length}):</p>
-                  {purchaseReturnItems.map((item) => (
-                    <div key={item.product_id} className="flex justify-between items-center bg-card p-3 md:p-4 rounded-xl">
-                      <span className="font-bold">{item.product_name}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg font-black text-sm">
-                          {item.quantity} × {item.unit_price.toLocaleString()}
-                        </span>
-                        <button 
-                          type="button" 
-                          onClick={() => removePurchaseReturnItem(item.product_id)} 
-                          className="text-destructive p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+      {/* Purchase Return Modal - Full Screen */}
+      <FullScreenModal
+        isOpen={showPurchaseReturnModal}
+        onClose={() => { setShowPurchaseReturnModal(false); resetPurchaseReturnForm(); }}
+        title="مرتجع شراء"
+        icon={<RotateCcw size={24} />}
+        headerColor="destructive"
+        footer={
+          <button 
+            type="button"
+            onClick={() => {
+              const form = document.getElementById('purchase-return-form') as HTMLFormElement;
+              if (form) form.requestSubmit();
+            }}
+            disabled={purchaseReturnItems.length === 0}
+            className="w-full bg-destructive text-white font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-lg flex items-center justify-center gap-2"
+          >
+            <Check size={22} />
+            تأكيد المرتجع
+          </button>
+        }
+      >
+        <form id="purchase-return-form" onSubmit={handlePurchaseReturnSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-muted-foreground uppercase">المورد (اختياري)</label>
+            <input 
+              type="text" 
+              value={purchaseReturnSupplier} 
+              onChange={(e) => setPurchaseReturnSupplier(e.target.value)} 
+              placeholder="اسم المورد" 
+              className="input-field py-4" 
+            />
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase">سبب المرتجع (اختياري)</label>
+          <div className="space-y-3">
+            <label className="text-xs font-black text-muted-foreground uppercase">إضافة أصناف للمرتجع</label>
+            <select 
+              value={selectedReturnProduct} 
+              onChange={(e) => handleReturnProductChange(e.target.value)} 
+              className="input-field py-4"
+            >
+              <option value="">اختر المنتج...</option>
+              {products.filter(p => p.stock > 0).map(p => (
+                <option key={p.id} value={p.id}>{p.name} (متوفر: {p.stock})</option>
+              ))}
+            </select>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-muted-foreground">الكمية</label>
                 <input 
-                  type="text" 
-                  value={purchaseReturnReason} 
-                  onChange={(e) => setPurchaseReturnReason(e.target.value)} 
-                  placeholder="سبب المرتجع" 
-                  className="input-field py-4" 
+                  type="number" 
+                  min="1" 
+                  value={returnItemQty} 
+                  onChange={(e) => setReturnItemQty(Number(e.target.value))} 
+                  className="input-field text-center text-xl font-black py-4" 
                 />
               </div>
-
-              <div className="bg-destructive/10 p-4 md:p-5 rounded-2xl border border-destructive/20 flex justify-between items-center">
-                <span className="font-bold text-muted-foreground">إجمالي المرتجع:</span>
-                <span className="text-2xl md:text-3xl font-black text-destructive">{purchaseReturnTotal.toLocaleString()} {CURRENCY}</span>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-muted-foreground">سعر الوحدة</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  step="0.01"
+                  value={returnItemPrice} 
+                  onChange={(e) => setReturnItemPrice(Number(e.target.value))} 
+                  className="input-field text-center text-xl font-black py-4" 
+                />
               </div>
-            </form>
+            </div>
             
-            {/* Footer */}
-            <div className="shrink-0 p-5 md:p-6 pt-0 border-t border-border bg-card">
-              <button 
-                type="button"
-                onClick={(e) => {
-                  const form = e.currentTarget.closest('.flex-col')?.querySelector('form');
-                  if (form) form.requestSubmit();
-                }}
-                disabled={purchaseReturnItems.length === 0}
-                className="w-full bg-destructive text-white font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-lg flex items-center justify-center gap-2"
-              >
-                <Check size={22} />
-                تأكيد المرتجع
-              </button>
+            <button 
+              type="button" 
+              onClick={addPurchaseReturnItem} 
+              disabled={!selectedReturnProduct || returnItemQty <= 0}
+              className="w-full py-4 bg-destructive/10 text-destructive rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-transform"
+            >
+              <Plus size={20} /> إضافة للمرتجع
+            </button>
+          </div>
+
+          {purchaseReturnItems.length > 0 && (
+            <div className="space-y-3 bg-muted p-4 rounded-2xl">
+              <p className="text-xs font-black text-muted-foreground uppercase">أصناف المرتجع ({purchaseReturnItems.length}):</p>
+              {purchaseReturnItems.map((item) => (
+                <div key={item.product_id} className="flex justify-between items-center bg-card p-4 rounded-xl">
+                  <span className="font-bold">{item.product_name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg font-black text-sm">
+                      {item.quantity} × {item.unit_price.toLocaleString()}
+                    </span>
+                    <button 
+                      type="button" 
+                      onClick={() => removePurchaseReturnItem(item.product_id)} 
+                      className="text-destructive p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="text-xs font-black text-muted-foreground uppercase">سبب المرتجع (اختياري)</label>
+            <input 
+              type="text" 
+              value={purchaseReturnReason} 
+              onChange={(e) => setPurchaseReturnReason(e.target.value)} 
+              placeholder="سبب المرتجع" 
+              className="input-field py-4" 
+            />
+          </div>
+
+          <div className="bg-destructive/10 p-5 rounded-2xl border border-destructive/20 flex justify-between items-center">
+            <span className="font-bold text-muted-foreground">إجمالي المرتجع:</span>
+            <span className="text-3xl font-black text-destructive">{purchaseReturnTotal.toLocaleString()} {CURRENCY}</span>
+          </div>
+        </form>
+      </FullScreenModal>
+
+      {/* Product Modal - Full Screen */}
+      <FullScreenModal
+        isOpen={showProductModal}
+        onClose={() => { setShowProductModal(false); setEditingProduct(null); }}
+        title={editingProduct ? 'تعديل صنف' : 'إضافة صنف جديد'}
+        icon={<Package size={24} />}
+        headerColor="primary"
+        footer={
+          <button 
+            type="button"
+            onClick={() => {
+              const form = document.getElementById('product-form') as HTMLFormElement;
+              if (form) form.requestSubmit();
+            }}
+            className="w-full bg-primary text-primary-foreground font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all text-lg"
+          >
+            {editingProduct ? 'حفظ التعديلات' : 'حفظ الصنف'}
+          </button>
+        }
+      >
+        <form id="product-form" onSubmit={handleProductSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-muted-foreground uppercase">اسم الصنف</label>
+            <input 
+              name="name" 
+              required 
+              defaultValue={editingProduct?.name} 
+              placeholder="اسم الصنف" 
+              className="input-field py-4 text-base" 
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-xs font-black text-muted-foreground uppercase">الفئة</label>
+            <input 
+              name="category" 
+              defaultValue={editingProduct?.category} 
+              placeholder="الفئة" 
+              className="input-field py-4" 
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-black text-muted-foreground uppercase">سعر التكلفة</label>
+              <input 
+                name="costPrice" 
+                type="number" 
+                step="0.01" 
+                defaultValue={editingProduct?.costPrice} 
+                placeholder="0" 
+                className="input-field py-4 text-center text-xl font-black" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-black text-muted-foreground uppercase">سعر البيع</label>
+              <input 
+                name="basePrice" 
+                type="number" 
+                step="0.01" 
+                defaultValue={editingProduct?.basePrice} 
+                placeholder="0" 
+                className="input-field py-4 text-center text-xl font-black" 
+              />
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Product Modal - Full Screen on Mobile */}
-      {showProductModal && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background md:bg-black/50 md:backdrop-blur-sm md:items-center md:justify-center md:p-6">
-          <div className="flex flex-col w-full h-full md:h-auto md:max-h-[90vh] md:w-full md:max-w-2xl md:rounded-3xl md:shadow-2xl bg-card overflow-hidden animate-fade-in md:animate-zoom-in">
-            {/* Header */}
-            <div className="bg-primary text-primary-foreground px-5 py-4 md:py-5 flex items-center justify-between shrink-0">
-              <h2 className="text-lg md:text-xl font-black flex items-center gap-3">
-                <Package size={24} /> {editingProduct ? 'تعديل صنف' : 'إضافة صنف جديد'}
-              </h2>
-              <button 
-                onClick={() => { setShowProductModal(false); setEditingProduct(null); }} 
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
-              >
-                <X size={24} />
-              </button>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-black text-muted-foreground uppercase">المخزون الحالي</label>
+              <input 
+                name="stock" 
+                type="number" 
+                defaultValue={editingProduct?.stock ?? 0} 
+                className="input-field py-4 text-center text-xl font-black" 
+              />
             </div>
-            
-            {/* Body */}
-            <form onSubmit={handleProductSubmit} className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase">اسم الصنف</label>
-                <input 
-                  name="name" 
-                  required 
-                  defaultValue={editingProduct?.name} 
-                  placeholder="اسم الصنف" 
-                  className="input-field py-4 text-base" 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase">الفئة</label>
-                <input 
-                  name="category" 
-                  defaultValue={editingProduct?.category} 
-                  placeholder="الفئة" 
-                  className="input-field py-4" 
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-muted-foreground uppercase">سعر التكلفة</label>
-                  <input 
-                    name="costPrice" 
-                    type="number" 
-                    step="0.01" 
-                    defaultValue={editingProduct?.costPrice} 
-                    placeholder="0" 
-                    className="input-field py-4 text-center text-lg font-black" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-muted-foreground uppercase">سعر البيع</label>
-                  <input 
-                    name="basePrice" 
-                    type="number" 
-                    step="0.01" 
-                    defaultValue={editingProduct?.basePrice} 
-                    placeholder="0" 
-                    className="input-field py-4 text-center text-lg font-black" 
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-muted-foreground uppercase">المخزون الحالي</label>
-                  <input 
-                    name="stock" 
-                    type="number" 
-                    defaultValue={editingProduct?.stock ?? 0} 
-                    className="input-field py-4 text-center text-lg font-black" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-muted-foreground uppercase">الحد الأدنى</label>
-                  <input 
-                    name="minStock" 
-                    type="number" 
-                    defaultValue={editingProduct?.minStock ?? 5} 
-                    className="input-field py-4 text-center text-lg font-black" 
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase">الوحدة</label>
-                <input 
-                  name="unit" 
-                  defaultValue={editingProduct?.unit ?? 'قطعة'} 
-                  placeholder="قطعة" 
-                  className="input-field py-4" 
-                />
-              </div>
-            </form>
-            
-            {/* Footer */}
-            <div className="shrink-0 p-5 md:p-6 pt-0 border-t border-border bg-card">
-              <button 
-                type="button"
-                onClick={(e) => {
-                  const form = e.currentTarget.closest('.flex-col')?.querySelector('form');
-                  if (form) form.requestSubmit();
-                }}
-                className="w-full bg-primary text-primary-foreground font-black py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all text-lg"
-              >
-                {editingProduct ? 'حفظ التعديلات' : 'حفظ الصنف'}
-              </button>
+            <div className="space-y-2">
+              <label className="text-xs font-black text-muted-foreground uppercase">الحد الأدنى</label>
+              <input 
+                name="minStock" 
+                type="number" 
+                defaultValue={editingProduct?.minStock ?? 5} 
+                className="input-field py-4 text-center text-xl font-black" 
+              />
             </div>
           </div>
-        </div>
-      )}
+          
+          <div className="space-y-2">
+            <label className="text-xs font-black text-muted-foreground uppercase">الوحدة</label>
+            <input 
+              name="unit" 
+              defaultValue={editingProduct?.unit ?? 'قطعة'} 
+              placeholder="قطعة" 
+              className="input-field py-4" 
+            />
+          </div>
+        </form>
+      </FullScreenModal>
     </div>
   );
 };
