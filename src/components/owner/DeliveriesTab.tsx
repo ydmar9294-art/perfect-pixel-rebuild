@@ -96,9 +96,10 @@ export const DeliveriesTab: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!distributorName.trim()) {
-      setError('يرجى اختيار الموزع');
+
+    // بعد إصلاح الفلو: لازم اختيار موزع فعلي (id) لضمان ربط المخزون
+    if (!selectedDistributorId) {
+      setError('يرجى اختيار موزع مُفعّل من القائمة');
       return;
     }
     
@@ -228,8 +229,8 @@ export const DeliveriesTab: React.FC = () => {
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mr-2">الموزع</label>
                 {distributors.length > 0 ? (
-                  <select 
-                    value={selectedDistributorId} 
+                  <select
+                    value={selectedDistributorId}
                     onChange={(e) => handleDistributorChange(e.target.value)}
                     className="input-field"
                     disabled={loading}
@@ -240,14 +241,9 @@ export const DeliveriesTab: React.FC = () => {
                     ))}
                   </select>
                 ) : (
-                  <input 
-                    type="text"
-                    value={distributorName}
-                    onChange={(e) => setDistributorName(e.target.value)}
-                    placeholder="اسم الموزع"
-                    className="input-field"
-                    disabled={loading}
-                  />
+                  <div className="bg-muted p-4 rounded-2xl text-sm text-muted-foreground font-bold">
+                    لا يوجد موزعين مُفعّلين حالياً. أضف موزع جديد ثم فعّل حسابه قبل تنفيذ التسليم.
+                  </div>
                 )}
               </div>
 
