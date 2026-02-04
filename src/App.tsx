@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { App as CapacitorApp } from '@capacitor/app';
 import { useApp } from '@/store/AppContext';
 import { UserRole, EmployeeType } from '@/types';
 import { Layout } from '@/components/Layout';
@@ -207,6 +209,26 @@ const MainContent: React.FC = () => {
 // APP - Main Application Entry Point
 // ==========================================
 const App: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle Android hardware back button
+  useEffect(() => {
+    const handleBackButton = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      // If on home/root path, exit the app
+      if (location.pathname === '/' && !canGoBack) {
+        CapacitorApp.exitApp();
+      } else {
+        // Otherwise, go back in history
+        navigate(-1);
+      }
+    });
+
+    return () => {
+      handleBackButton.then(listener => listener.remove());
+    };
+  }, [navigate, location.pathname]);
+
   return <MainContent />;
 };
 
