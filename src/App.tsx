@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { App as CapacitorApp } from '@capacitor/app';
 import { useApp } from '@/store/AppContext';
@@ -15,11 +15,20 @@ import {
 } from 'lucide-react';
 import { CURRENCY } from '@/constants';
 import { LicenseStatus } from '@/types';
-import DistributorDashboard from '@/components/distributor/DistributorDashboard';
-import AccountantDashboard from '@/components/accountant/AccountantDashboard';
-import OwnerDashboard from '@/components/owner/OwnerDashboard';
-import AuthFlow from '@/components/auth/AuthFlow';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+
+// Lazy-loaded dashboard components for code splitting
+const DistributorDashboard = lazy(() => import('@/components/distributor/DistributorDashboard'));
+const AccountantDashboard = lazy(() => import('@/components/accountant/AccountantDashboard'));
+const OwnerDashboard = lazy(() => import('@/components/owner/OwnerDashboard'));
+const AuthFlow = lazy(() => import('@/components/auth/AuthFlow'));
+
+// Shared loading fallback
+const DashboardLoader: React.FC = () => (
+  <div className="flex items-center justify-center h-64">
+    <Loader2 size={32} className="animate-spin text-primary" />
+  </div>
+);
 
 // ==========================================
 // DEVELOPER HUB
@@ -29,11 +38,11 @@ const DeveloperHub: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const copyKey = (key: string) => {
+  const copyKey = useCallback((key: string) => {
     navigator.clipboard.writeText(key);
     setCopied(key);
     setTimeout(() => setCopied(null), 2000);
-  };
+  }, []);
 
   return (
     <div className="space-y-8 animate-fade-in pb-12 text-end" dir="rtl">
@@ -140,17 +149,29 @@ const KpiCard: React.FC<any> = ({ label, value, icon }) => (
 const ViewManager: React.FC = () => {
   const { role, user } = useApp();
   
-  // Route based on role
+  // Route based on role with lazy loading
   switch (role) {
     case UserRole.DEVELOPER:
       return <DeveloperHub />;
     case UserRole.OWNER:
-      return <OwnerDashboard />;
+      return (
+        <Suspense fallback={<DashboardLoader />}>
+          <OwnerDashboard />
+        </Suspense>
+      );
     case UserRole.EMPLOYEE:
       if (user?.employeeType === EmployeeType.ACCOUNTANT) {
-        return <AccountantDashboard />;
+        return (
+          <Suspense fallback={<DashboardLoader />}>
+            <AccountantDashboard />
+          </Suspense>
+        );
       }
-      return <DistributorDashboard />;
+      return (
+        <Suspense fallback={<DashboardLoader />}>
+          <DistributorDashboard />
+        </Suspense>
+      );
     default:
       return (
         <div className="flex items-center justify-center h-64">
@@ -168,16 +189,6 @@ const MainContent: React.FC = () => {
   
   // Initialize push notifications
   usePushNotifications();
-  
-  // Loading timeout detection
-  useEffect(() => {
-    if (isLoading) {
-      const timer = setTimeout(() => {
-        console.warn('[App] Loading timeout - potential stuck state');
-      }, 10000);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading]);
 
   if (isLoading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-slate-900">
@@ -192,7 +203,9 @@ const MainContent: React.FC = () => {
     return (
       <>
         <ToastManager />
-        <AuthFlow onAuthComplete={refreshAuth} />
+        <Suspense fallback={<DashboardLoader />}>
+          <AuthFlow onAuthComplete={refreshAuth} />
+        </Suspense>
       </>
     );
   }
@@ -213,21 +226,31 @@ const App: React.FC = () => {
   const location = useLocation();
 
   // Handle Android hardware back button
+  // Using refs to avoid stale closures in the listener
+  const locationRef = React.useRef(location.pathname);
+  const navigateRef = React.useRef(navigate);
+
   useEffect(() => {
-    const handleBackButton = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-      // If on home/root path, exit the app
-      if (location.pathname === '/' && !canGoBack) {
+    locationRef.current = location.pathname;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
+
+  useEffect(() => {
+    const listener = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      if (locationRef.current === '/' && !canGoBack) {
         CapacitorApp.exitApp();
       } else {
-        // Otherwise, go back in history
-        navigate(-1);
+        navigateRef.current(-1);
       }
     });
 
     return () => {
-      handleBackButton.then(listener => listener.remove());
+      listener.then(handle => handle.remove());
     };
-  }, [navigate, location.pathname]);
+  }, []); // Empty deps - refs handle freshness
 
   return <MainContent />;
 };
