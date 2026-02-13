@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { lovable } from '@/integrations/lovable/index';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GoogleAuthButtonProps {
   onError?: (error: string) => void;
@@ -8,6 +9,11 @@ interface GoogleAuthButtonProps {
   className?: string;
 }
 
+/**
+ * Detects if running inside Despia native WebView (checks userAgent).
+ * - Web: uses Lovable Cloud OAuth (lovable.auth.signInWithOAuth)
+ * - Native (Despia): calls auth-start edge function, opens OAuth via despia('oauth://...')
+ */
 const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({ 
   onError, 
   disabled = false,
@@ -15,15 +21,44 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
 
-  const handleGoogleSignIn = async () => {
-    if (loading || disabled) return;
-    
-    setLoading(true);
+  const isDespiaNative = (): boolean => {
+    return navigator.userAgent.toLowerCase().includes('despia');
+  };
+
+  const handleNativeGoogleSignIn = async () => {
+    try {
+      // Dynamically import despia-native only when needed (native only)
+      const { default: despia } = await import('despia-native');
+
+      const { data, error } = await supabase.functions.invoke('auth-start', {
+        body: {
+          provider: 'google',
+          deeplink_scheme: 'smartsystem', // CHANGE to your Despia app scheme
+        },
+      });
+
+      if (error || !data?.url) {
+        console.error('[GoogleAuth] Failed to get OAuth URL:', error);
+        onError?.('فشل بدء تسجيل الدخول');
+        setLoading(false);
+        return;
+      }
+
+      // Opens URL in ASWebAuthenticationSession (iOS) or Chrome Custom Tab (Android)
+      despia(`oauth://?url=${encodeURIComponent(data.url)}`);
+    } catch (err: any) {
+      console.error('[GoogleAuth] Native auth error:', err);
+      onError?.(err.message || 'حدث خطأ غير متوقع');
+      setLoading(false);
+    }
+  };
+
+  const handleWebGoogleSignIn = async () => {
     try {
       const { error } = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
-      
+
       if (error) {
         console.error('[GoogleAuth] Error:', error);
         onError?.(error.message || 'فشل تسجيل الدخول بواسطة Google');
@@ -33,6 +68,17 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
       onError?.(err.message || 'حدث خطأ غير متوقع');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (loading || disabled) return;
+    setLoading(true);
+
+    if (isDespiaNative()) {
+      await handleNativeGoogleSignIn();
+    } else {
+      await handleWebGoogleSignIn();
     }
   };
 
