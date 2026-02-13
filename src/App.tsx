@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
-import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { App as CapacitorApp } from '@capacitor/app';
 import { useApp } from '@/store/AppContext';
 import { UserRole, EmployeeType } from '@/types';
 import { Layout } from '@/components/Layout';
@@ -15,15 +16,12 @@ import {
 import { CURRENCY } from '@/constants';
 import { LicenseStatus } from '@/types';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import SpaRedirector from '@/components/SpaRedirector';
 
 // Lazy-loaded dashboard components for code splitting
 const DistributorDashboard = lazy(() => import('@/components/distributor/DistributorDashboard'));
 const AccountantDashboard = lazy(() => import('@/components/accountant/AccountantDashboard'));
 const OwnerDashboard = lazy(() => import('@/components/owner/OwnerDashboard'));
 const AuthFlow = lazy(() => import('@/components/auth/AuthFlow'));
-const AuthPage = lazy(() => import('@/pages/Auth'));
-const NativeCallbackPage = lazy(() => import('@/pages/NativeCallback'));
 
 // Shared loading fallback
 const DashboardLoader: React.FC = () => (
@@ -151,6 +149,7 @@ const KpiCard: React.FC<any> = ({ label, value, icon }) => (
 const ViewManager: React.FC = () => {
   const { role, user } = useApp();
   
+  // Route based on role with lazy loading
   switch (role) {
     case UserRole.DEVELOPER:
       return <DeveloperHub />;
@@ -183,11 +182,12 @@ const ViewManager: React.FC = () => {
 };
 
 // ==========================================
-// MAIN CONTENT (Home page)
+// MAIN CONTENT
 // ==========================================
 const MainContent: React.FC = () => {
   const { user, isLoading, refreshAuth, needsActivation } = useApp();
   
+  // Initialize push notifications
   usePushNotifications();
 
   if (isLoading) return (
@@ -198,6 +198,7 @@ const MainContent: React.FC = () => {
     </div>
   );
 
+  // Show auth flow if not logged in or needs activation
   if (!user || needsActivation) {
     return (
       <>
@@ -218,28 +219,40 @@ const MainContent: React.FC = () => {
 };
 
 // ==========================================
-// APP - Main Application Entry Point with Routes
+// APP - Main Application Entry Point
 // ==========================================
 const App: React.FC = () => {
-  return (
-    <>
-      <SpaRedirector />
-      <Routes>
-        <Route path="/" element={<MainContent />} />
-        <Route path="/auth" element={
-          <Suspense fallback={<DashboardLoader />}>
-            <AuthPage />
-          </Suspense>
-        } />
-        <Route path="/native-callback" element={
-          <Suspense fallback={<DashboardLoader />}>
-            <NativeCallbackPage />
-          </Suspense>
-        } />
-        <Route path="*" element={<MainContent />} />
-      </Routes>
-    </>
-  );
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle Android hardware back button
+  // Using refs to avoid stale closures in the listener
+  const locationRef = React.useRef(location.pathname);
+  const navigateRef = React.useRef(navigate);
+
+  useEffect(() => {
+    locationRef.current = location.pathname;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
+
+  useEffect(() => {
+    const listener = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      if (locationRef.current === '/' && !canGoBack) {
+        CapacitorApp.exitApp();
+      } else {
+        navigateRef.current(-1);
+      }
+    });
+
+    return () => {
+      listener.then(handle => handle.remove());
+    };
+  }, []); // Empty deps - refs handle freshness
+
+  return <MainContent />;
 };
 
 export default App;
