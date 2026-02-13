@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import App from "./App.tsx";
 import "./index.css";
 import { AppProvider } from "@/store/AppContext";
@@ -9,13 +9,13 @@ import { applySecurityMeta } from "@/utils/securityHeaders";
 applySecurityMeta();
 
 // Render app with AppProvider wrapping the entire application
-// HashRouter is required for Capacitor/WebView APK compatibility
+// BrowserRouter required for Despia native OAuth callback handling
 createRoot(document.getElementById("root")!).render(
-  <HashRouter>
+  <BrowserRouter>
     <AppProvider>
       <Routes>
         <Route path="/*" element={<App />} />
       </Routes>
     </AppProvider>
-  </HashRouter>
+  </BrowserRouter>
 );
